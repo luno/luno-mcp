@@ -47,20 +47,20 @@ The server may require your Luno API key and secret for certain endpoints. These
 
 ## Available Tools
 
-| Tool                | Category            | Auth Required | Description                                       |
-| ------------------- | ------------------- | ------------- | ------------------------------------------------- |
-| `get_ticker`        | Market Data         | No            | Get current ticker information for a trading pair |
-| `get_tickers`       | Market Data         | No            | List tickers for given pairs (or all)             |
-| `get_order_book`    | Market Data         | No            | Get the order book for a trading pair             |
-| `list_trades`       | Market Data         | No            | List recent trades for a currency pair            |
-| `get_candles`       | Market Data         | No            | Get candlestick market data for a currency pair   |
-| `get_markets_info`  | Market Data         | No            | List all supported markets parameter information  |
-| `get_balances`      | Account Information | Yes           | Get balances for all accounts                     |
-| `create_order`      | Trading             | Yes           | Create a new buy or sell order                    |
-| `cancel_order`      | Trading             | Yes           | Cancel an existing order                          |
-| `list_orders`       | Trading             | Yes           | List open orders                                  |
-| `list_transactions` | Transactions        | Yes           | List transactions for an account                  |
-| `get_transaction`   | Transactions        | Yes           | Get details of a specific transaction             |
+| Tool                | Category            | Auth Required | Description                                       | Requires Write Operations |
+| ------------------- | ------------------- | ------------- | ------------------------------------------------- | ------------------------- |
+| `get_ticker`        | Market Data         | No            | Get current ticker information for a trading pair | No                        |
+| `get_tickers`       | Market Data         | No            | List tickers for given pairs (or all)             | No                        |
+| `get_order_book`    | Market Data         | No            | Get the order book for a trading pair             | No                        |
+| `list_trades`       | Market Data         | No            | List recent trades for a currency pair            | No                        |
+| `get_candles`       | Market Data         | No            | Get candlestick market data for a currency pair   | No                        |
+| `get_markets_info`  | Market Data         | No            | List all supported markets parameter information  | No                        |
+| `get_balances`      | Account Information | Yes           | Get balances for all accounts                     | No                        |
+| `create_order`      | Trading             | Yes           | Create a new buy or sell order                    | **Yes**                   |
+| `cancel_order`      | Trading             | Yes           | Cancel an existing order                          | **Yes**                   |
+| `list_orders`       | Trading             | Yes           | List open orders                                  | No                        |
+| `list_transactions` | Transactions        | Yes           | List transactions for an account                  | No                        |
+| `get_transaction`   | Transactions        | Yes           | Get details of a specific transaction             | No                        |
 
 ## Examples
 
@@ -206,12 +206,55 @@ This configuration will make VS Code run the Docker container. Ensure Docker is 
 
 This tool requires API credentials that have access to your Luno account. Be cautious when using API keys, especially ones with withdrawal permissions. It's recommended to create API keys with only the permissions needed for your specific use case.
 
+### Write Operations Control
+
+By default, the MCP server runs in **read-only mode** with write operations (`create_order` and `cancel_order`) disabled for security. To enable write operations, you must explicitly set the `ALLOW_WRITE_OPERATIONS` environment variable.
+
+#### Enabling Write Operations
+
+Set the environment variable to one of the following values:
+- `ALLOW_WRITE_OPERATIONS=true`
+- `ALLOW_WRITE_OPERATIONS=1`
+- `ALLOW_WRITE_OPERATIONS=yes`
+
+##### Docker Example:
+```bash
+docker run --rm -i \
+  -e "LUNO_API_KEY_ID=${LUNO_API_KEY_ID}" \
+  -e "LUNO_API_SECRET=${LUNO_API_SECRET}" \
+  -e "ALLOW_WRITE_OPERATIONS=true" \
+  ghcr.io/luno/luno-mcp:latest
+```
+
+##### VS Code Configuration:
+```json
+{
+  "servers": {
+    "luno-docker": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "LUNO_API_KEY_ID=${input:luno_api_key_id}",
+        "-e", "LUNO_API_SECRET=${input:luno_api_secret}",
+        "-e", "ALLOW_WRITE_OPERATIONS=true",
+        "ghcr.io/luno/luno-mcp:latest"
+      ],
+      "inputs": [
+         {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+         {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+      ]
+    }
+  }
+}
+```
+
 ### Best Practices for API Credentials
 
 1. **Create Limited-Permission API Keys**: Only grant the permissions absolutely necessary for your use case
 2. **Never Commit Credentials to Version Control**: Ensure `.env` files are always in your `.gitignore`
 3. **Rotate API Keys Regularly**: Periodically regenerate your API keys to limit the impact of potential leaks
 4. **Monitor API Usage**: Regularly check your Luno account for any unauthorized activity
+5. **Use Read-Only Mode by Default**: Only enable write operations when specifically needed
 
 ### Contributing
 
