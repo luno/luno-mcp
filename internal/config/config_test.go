@@ -68,6 +68,7 @@ func TestLoad(t *testing.T) {
 	originalAPISecret := os.Getenv(EnvLunoAPIKeySecret)
 	originalAPIDomain := os.Getenv(EnvLunoAPIDomain)
 	originalAPIDebug := os.Getenv(EnvLunoAPIDebug)
+	originalAllowWriteOps := os.Getenv(EnvAllowWriteOperations)
 
 	defer func() {
 		// Restore original environment
@@ -75,25 +76,29 @@ func TestLoad(t *testing.T) {
 		setEnvVar(EnvLunoAPIKeySecret, originalAPISecret)
 		setEnvVar(EnvLunoAPIDomain, originalAPIDomain)
 		setEnvVar(EnvLunoAPIDebug, originalAPIDebug)
+		setEnvVar(EnvAllowWriteOperations, originalAllowWriteOps)
 	}()
 
 	tests := []struct {
-		name           string
-		apiKeyID       string
-		apiSecret      string
-		domainEnv      string
-		domainOverride string
-		debugEnv       string
-		expectedError  string
-		expectedDomain string
-		expectAuth     bool
+		name                  string
+		apiKeyID              string
+		apiSecret             string
+		domainEnv             string
+		domainOverride        string
+		debugEnv              string
+		allowWriteOpsEnv      string
+		expectedError         string
+		expectedDomain        string
+		expectAuth            bool
+		expectedAllowWriteOps bool
 	}{
 		{
-			name:           "valid credentials with defaults",
-			apiKeyID:       "test_key_id",
-			apiSecret:      "test_secret",
-			expectedDomain: DefaultLunoDomain,
-			expectAuth:     true,
+			name:                  "valid credentials with defaults",
+			apiKeyID:              "test_key_id",
+			apiSecret:             "test_secret",
+			expectedDomain:        DefaultLunoDomain,
+			expectAuth:            true,
+			expectedAllowWriteOps: false,
 		},
 		{
 			name:       "missing api key id",
@@ -152,6 +157,54 @@ func TestLoad(t *testing.T) {
 			debugEnv:   "false",
 			expectAuth: true,
 		},
+		{
+			name:                  "write operations enabled with true",
+			apiKeyID:              "test_key_id",
+			apiSecret:             "test_secret",
+			allowWriteOpsEnv:      "true",
+			expectAuth:            true,
+			expectedAllowWriteOps: true,
+		},
+		{
+			name:                  "write operations enabled with 1",
+			apiKeyID:              "test_key_id",
+			apiSecret:             "test_secret",
+			allowWriteOpsEnv:      "1",
+			expectAuth:            true,
+			expectedAllowWriteOps: true,
+		},
+		{
+			name:                  "write operations enabled with yes",
+			apiKeyID:              "test_key_id",
+			apiSecret:             "test_secret",
+			allowWriteOpsEnv:      "yes",
+			expectAuth:            true,
+			expectedAllowWriteOps: true,
+		},
+		{
+			name:                  "write operations disabled with false",
+			apiKeyID:              "test_key_id",
+			apiSecret:             "test_secret",
+			allowWriteOpsEnv:      "false",
+			expectAuth:            true,
+			expectedAllowWriteOps: false,
+		},
+		{
+			name:                  "write operations disabled with empty",
+			apiKeyID:              "test_key_id",
+			apiSecret:             "test_secret",
+			allowWriteOpsEnv:      "",
+			expectAuth:            true,
+			expectedAllowWriteOps: false,
+		},
+		{
+			name:                  "write operations disabled with invalid value",
+			apiKeyID:              "test_key_id",
+			apiSecret:             "test_secret",
+			allowWriteOpsEnv:      "invalid",
+			expectAuth:            true,
+			expectedAllowWriteOps: false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -161,6 +214,7 @@ func TestLoad(t *testing.T) {
 			setEnvVar(EnvLunoAPIKeySecret, tc.apiSecret)
 			setEnvVar(EnvLunoAPIDomain, tc.domainEnv)
 			setEnvVar(EnvLunoAPIDebug, tc.debugEnv)
+			setEnvVar(EnvAllowWriteOperations, tc.allowWriteOpsEnv)
 
 			cfg, err := Load(tc.domainOverride)
 
@@ -191,6 +245,10 @@ func TestLoad(t *testing.T) {
 
 			if cfg.IsAuthenticated != tc.expectAuth {
 				t.Errorf("Expected IsAuthenticated to be %v, but got %v", tc.expectAuth, cfg.IsAuthenticated)
+			}
+
+			if cfg.AllowWriteOperations != tc.expectedAllowWriteOps {
+				t.Errorf("Expected AllowWriteOperations to be %v, got %v", tc.expectedAllowWriteOps, cfg.AllowWriteOperations)
 			}
 		})
 	}
