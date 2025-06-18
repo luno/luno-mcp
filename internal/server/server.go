@@ -70,11 +70,17 @@ func registerTools(server *mcpserver.MCPServer, cfg *config.Config) {
 	server.AddTool(orderBookTool, tools.HandleGetOrderBook(cfg))
 
 	// Add trading tools
-	createOrderTool := tools.NewCreateOrderTool()
-	server.AddTool(createOrderTool, tools.HandleCreateOrder(cfg))
+	// Only add write operation tools if explicitly allowed
+	if cfg.AllowWriteOperations {
+		slog.Info("Write operations enabled - registering create_order and cancel_order tools")
+		createOrderTool := tools.NewCreateOrderTool()
+		server.AddTool(createOrderTool, tools.HandleCreateOrder(cfg))
 
-	cancelOrderTool := tools.NewCancelOrderTool()
-	server.AddTool(cancelOrderTool, tools.HandleCancelOrder(cfg))
+		cancelOrderTool := tools.NewCancelOrderTool()
+		server.AddTool(cancelOrderTool, tools.HandleCancelOrder(cfg))
+	} else {
+		slog.Info("Write operations disabled - create_order and cancel_order tools will not be available")
+	}
 
 	listOrdersTool := tools.NewListOrdersTool()
 	server.AddTool(listOrdersTool, tools.HandleListOrders(cfg))
