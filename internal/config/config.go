@@ -13,10 +13,11 @@ import (
 
 const (
 	// Environment variables
-	EnvLunoAPIKeyID     = "LUNO_API_KEY_ID"
-	EnvLunoAPIKeySecret = "LUNO_API_SECRET"
-	EnvLunoAPIDomain    = "LUNO_API_DOMAIN"
-	EnvLunoAPIDebug     = "LUNO_API_DEBUG"
+	EnvLunoAPIKeyID          = "LUNO_API_KEY_ID"
+	EnvLunoAPIKeySecret      = "LUNO_API_SECRET"
+	EnvLunoAPIDomain         = "LUNO_API_DOMAIN"
+	EnvLunoAPIDebug          = "LUNO_API_DEBUG"
+	EnvAllowWriteOperations  = "ALLOW_WRITE_OPERATIONS"
 
 	// Default Luno API domain
 	DefaultLunoDomain = "api.luno.com"
@@ -26,6 +27,9 @@ const (
 type Config struct {
 	// Luno client
 	LunoClient sdk.LunoClient
+
+	// AllowWriteOperations controls whether write operations (create_order, cancel_order) are exposed
+	AllowWriteOperations bool
 }
 
 // Mask a string to show only the first 4 characters and replace the rest with asterisks
@@ -87,8 +91,23 @@ func Load(domainOverride string) (*Config, error) {
 	}
 
 	client.SetDebug(debugMode)
+
+	// Check if write operations are allowed via environment variable
+	allowWriteOps := false
+	if writeOpsEnv := os.Getenv(strings.TrimSpace(EnvAllowWriteOperations)); writeOpsEnv != "" {
+		// Enable write operations if environment variable is set to "true", "1", or "yes"
+		allowWriteOps = strings.ToLower(writeOpsEnv) == "true" ||
+			writeOpsEnv == "1" ||
+			strings.ToLower(writeOpsEnv) == "yes"
+
+		if allowWriteOps {
+			fmt.Println("Write operations enabled via environment variable")
+		}
+	}
+
 	return &Config{
-		LunoClient: client,
+		LunoClient:           client,
+		AllowWriteOperations: allowWriteOps,
 	}, nil
 }
 

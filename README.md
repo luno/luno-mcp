@@ -47,17 +47,17 @@ The server requires your Luno API key and secret. These can be obtained from you
 
 ## Available Tools
 
-| Tool                | Category            | Description                                       |
-| ------------------- | ------------------- | ------------------------------------------------- |
-| `get_ticker`        | Market Data         | Get current ticker information for a trading pair |
-| `get_order_book`    | Market Data         | Get the order book for a trading pair             |
-| `list_trades`       | Market Data         | List recent trades for a currency pair            |
-| `get_balances`      | Account Information | Get balances for all accounts                     |
-| `create_order`      | Trading             | Create a new buy or sell order                    |
-| `cancel_order`      | Trading             | Cancel an existing order                          |
-| `list_orders`       | Trading             | List open orders                                  |
-| `list_transactions` | Transactions        | List transactions for an account                  |
-| `get_transaction`   | Transactions        | Get details of a specific transaction             |
+| Tool                | Category            | Description                                       | Requires Write Operations |
+| ------------------- | ------------------- | ------------------------------------------------- | ------------------------- |
+| `get_ticker`        | Market Data         | Get current ticker information for a trading pair | No                        |
+| `get_order_book`    | Market Data         | Get the order book for a trading pair             | No                        |
+| `list_trades`       | Market Data         | List recent trades for a currency pair            | No                        |
+| `get_balances`      | Account Information | Get balances for all accounts                     | No                        |
+| `create_order`      | Trading             | Create a new buy or sell order                    | **Yes**                   |
+| `cancel_order`      | Trading             | Cancel an existing order                          | **Yes**                   |
+| `list_orders`       | Trading             | List open orders                                  | No                        |
+| `list_transactions` | Transactions        | List transactions for an account                  | No                        |
+| `get_transaction`   | Transactions        | Get details of a specific transaction             | No                        |
 
 ## Examples
 
@@ -203,12 +203,55 @@ This configuration will make VS Code run the Docker container. Ensure Docker is 
 
 This tool requires API credentials that have access to your Luno account. Be cautious when using API keys, especially ones with withdrawal permissions. It's recommended to create API keys with only the permissions needed for your specific use case.
 
+### Write Operations Control
+
+By default, the MCP server runs in **read-only mode** with write operations (`create_order` and `cancel_order`) disabled for security. To enable write operations, you must explicitly set the `ALLOW_WRITE_OPERATIONS` environment variable.
+
+#### Enabling Write Operations
+
+Set the environment variable to one of the following values:
+- `ALLOW_WRITE_OPERATIONS=true`
+- `ALLOW_WRITE_OPERATIONS=1`
+- `ALLOW_WRITE_OPERATIONS=yes`
+
+##### Docker Example:
+```bash
+docker run --rm -i \
+  -e "LUNO_API_KEY_ID=${LUNO_API_KEY_ID}" \
+  -e "LUNO_API_SECRET=${LUNO_API_SECRET}" \
+  -e "ALLOW_WRITE_OPERATIONS=true" \
+  ghcr.io/luno/luno-mcp:latest
+```
+
+##### VS Code Configuration:
+```json
+{
+  "servers": {
+    "luno-docker": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "LUNO_API_KEY_ID=${input:luno_api_key_id}",
+        "-e", "LUNO_API_SECRET=${input:luno_api_secret}",
+        "-e", "ALLOW_WRITE_OPERATIONS=true",
+        "ghcr.io/luno/luno-mcp:latest"
+      ],
+      "inputs": [
+         {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+         {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+      ]
+    }
+  }
+}
+```
+
 ### Best Practices for API Credentials
 
 1. **Create Limited-Permission API Keys**: Only grant the permissions absolutely necessary for your use case
 2. **Never Commit Credentials to Version Control**: Ensure `.env` files are always in your `.gitignore`
 3. **Rotate API Keys Regularly**: Periodically regenerate your API keys to limit the impact of potential leaks
 4. **Monitor API Usage**: Regularly check your Luno account for any unauthorized activity
+5. **Use Read-Only Mode by Default**: Only enable write operations when specifically needed
 
 ### Contributing
 
