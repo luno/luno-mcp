@@ -114,3 +114,12 @@ func ServeSSE(ctx context.Context, s *mcpserver.MCPServer, addr string) error {
 	slog.Info("SSE server listening on " + addr)
 	return sseServer.Start(addr)
 }
+
+// ServeStreamableHTTP starts the server using the streamable-http transport
+func ServeStreamableHTTP(ctx context.Context, s *mcpserver.MCPServer, addr string) error {
+	streamableServer := mcpserver.NewStreamableHTTPServer(s)
+
+	// Start the server
+	slog.Info("Streamable HTTP server listening on " + addr)
+	return streamableServer.Start(addr)
+}
