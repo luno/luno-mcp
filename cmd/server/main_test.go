@@ -253,7 +253,7 @@ func TestCreateMCPServer(t *testing.T) {
 	t.Setenv("LUNO_API_KEY_ID", "test_key")
 	t.Setenv("LUNO_API_SECRET", "test_secret")
 
-	cfg, err := config.Load("")
+	cfg, err := config.Load("", "test-app", "1.0.0")
 	require.NoError(t, err)
 
 	server := createMCPServer(cfg)
@@ -378,13 +378,13 @@ func TestMainFunctionFlow(t *testing.T) {
 	})
 
 	t.Run("load config", func(t *testing.T) {
-		cfg, err := config.Load("")
+		cfg, err := config.Load("", "test-app", "1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
 	})
 
 	t.Run("create mcp server", func(t *testing.T) {
-		cfg, err := config.Load("")
+		cfg, err := config.Load("", "test-app", "1.0.0")
 		require.NoError(t, err)
 
 		server := createMCPServer(cfg)
@@ -439,7 +439,7 @@ func TestSetupEnhancedLogger(t *testing.T) {
 			t.Setenv("LUNO_API_SECRET", "test_secret")
 
 			// Load configuration
-			cfg, err := config.Load("")
+			cfg, err := config.Load("", "test-app", "1.0.0")
 			require.NoError(t, err)
 
 			// Create MCP server
@@ -504,7 +504,7 @@ func TestStartServer(t *testing.T) {
 			t.Setenv("LUNO_API_SECRET", "test_secret")
 
 			// Load configuration
-			cfg, err := config.Load("")
+			cfg, err := config.Load("", "test-app", "1.0.0")
 			require.NoError(t, err)
 
 			// Create MCP server

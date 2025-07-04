@@ -3,8 +3,10 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/luno/luno-go"
 	"github.com/luno/luno-go/decimal"
@@ -37,7 +39,7 @@ func maskValue(s string) string {
 }
 
 // Load loads the configuration from environment variables
-func Load(domainOverride string) (*Config, error) {
+func Load(domainOverride, appName, appVersion string) (*Config, error) {
 	apiKeyID := os.Getenv(strings.TrimSpace(EnvLunoAPIKeyID))
 	apiKeySecret := os.Getenv(strings.TrimSpace(EnvLunoAPIKeySecret))
 
@@ -68,6 +70,14 @@ func Load(domainOverride string) (*Config, error) {
 	if domain != DefaultLunoDomain {
 		client.SetBaseURL(fmt.Sprintf("https://%s", domain))
 	}
+	
+	// Create a new HTTP client with MCP identification transport
+	httpClient := &http.Client{
+		Timeout:   10 * time.Second, // Match the default timeout from luno.NewClient()
+		Transport: NewMCPRoundTripper(nil, appName, appVersion),
+	}
+	client.SetHTTPClient(httpClient)
+	
 	err := client.SetAuth(apiKeyID, apiKeySecret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set Luno API credentials: %w", err)
