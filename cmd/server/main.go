@@ -56,8 +56,8 @@ func loadEnvFile() bool {
 
 // parseFlags parses command line flags and returns CliFlags struct
 func parseFlags() CliFlags {
-	transportType := flag.String("transport", "stdio", "Transport type (stdio or sse)")
-	sseAddr := flag.String("sse-address", "localhost:8080", "Address for SSE transport")
+	transportType := flag.String("transport", "stdio", "Transport type (stdio, sse, or streamable-http)")
+	sseAddr := flag.String("sse-address", "localhost:8080", "Address for SSE and streamable-http transports")
 	lunoDomain := flag.String("domain", "", "Luno API domain (default: api.luno.com)")
 	logLevel := flag.String("log-level", "info", "Log level (debug, info, warn, error)")
 	flag.Parse()
@@ -118,8 +118,11 @@ func startServer(ctx context.Context, mcpServer *mcpserver.MCPServer, flags CliF
 	case "sse":
 		slog.Info("Starting Luno MCP server using SSE transport", slog.String("address", flags.SSEAddr))
 		return server.ServeSSE(ctx, mcpServer, flags.SSEAddr)
+	case "streamable-http":
+		slog.Info("Starting Luno MCP server using streamable-http transport", slog.String("address", flags.SSEAddr))
+		return server.ServeStreamableHTTP(ctx, mcpServer, flags.SSEAddr)
 	default:
-		return fmt.Errorf("invalid transport type: %s. Must be 'stdio' or 'sse'", flags.TransportType)
+		return fmt.Errorf("invalid transport type: %s. Must be 'stdio', 'sse', or 'streamable-http'", flags.TransportType)
 	}
 }
 

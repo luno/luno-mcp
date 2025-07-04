@@ -15,16 +15,17 @@ import (
 )
 
 const (
-	testDefaultSSEAddr   = "localhost:8080"
-	testCustomSSEAddr    = "127.0.0.1:9000"
-	testStagingDomain    = "staging.api.luno.com"
-	testCustomDomain     = "test.api.luno.com"
-	testCustomSSEAddrAlt = "0.0.0.0:8888"
-	testLogLevelInfo     = "info"
-	testLogLevelDebug    = "debug"
-	testLogLevelError    = "error"
-	testTransportStdio   = "stdio"
-	testTransportSSE     = "sse"
+	testDefaultSSEAddr     = "localhost:8080"
+	testCustomSSEAddr      = "127.0.0.1:9000"
+	testStagingDomain      = "staging.api.luno.com"
+	testCustomDomain       = "test.api.luno.com"
+	testCustomSSEAddrAlt   = "0.0.0.0:8888"
+	testLogLevelInfo       = "info"
+	testLogLevelDebug      = "debug"
+	testLogLevelError      = "error"
+	testTransportStdio     = "stdio"
+	testTransportSSE       = "sse"
+	testTransportStreamable = "streamable-http"
 )
 
 func TestParseLogLevel(t *testing.T) {
@@ -122,6 +123,16 @@ func TestParseFlags(t *testing.T) {
 				SSEAddr:       testCustomSSEAddrAlt,
 				LunoDomain:    testCustomDomain,
 				LogLevel:      testLogLevelError,
+			},
+		},
+		{
+			name: "streamable-http transport with custom address",
+			args: []string{"-transport=streamable-http", "-sse-address=" + testCustomSSEAddr, "-domain=" + testStagingDomain, "-log-level=debug"},
+			expected: CliFlags{
+				TransportType: testTransportStreamable,
+				SSEAddr:       testCustomSSEAddr,
+				LunoDomain:    testStagingDomain,
+				LogLevel:      testLogLevelDebug,
 			},
 		},
 	}
@@ -488,6 +499,17 @@ func TestStartServer(t *testing.T) {
 			name: "sse transport with invalid address",
 			flags: CliFlags{
 				TransportType: testTransportSSE,
+				SSEAddr:       "invalid:99999",
+				LunoDomain:    "",
+				LogLevel:      testLogLevelInfo,
+			},
+			expectError:   true,
+			errorContains: "invalid port",
+		},
+		{
+			name: "streamable-http transport with invalid address",
+			flags: CliFlags{
+				TransportType: testTransportStreamable,
 				SSEAddr:       "invalid:99999",
 				LunoDomain:    "",
 				LogLevel:      testLogLevelInfo,

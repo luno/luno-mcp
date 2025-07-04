@@ -40,8 +40,8 @@ The server requires your Luno API key and secret. These can be obtained from you
 
 ### Command-line options
 
-- `--transport`: Transport type (`stdio` or `sse`, default: `stdio`)
-- `--sse-address`: Address for SSE transport (default: `localhost:8080`)
+- `--transport`: Transport type (`stdio`, `sse`, or `streamable-http`, default: `stdio`)
+- `--sse-address`: Address for SSE and streamable-http transports (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)
 
@@ -164,6 +164,19 @@ This configuration will make VS Code run the Docker container. Ensure Docker is 
     "luno": {
       "type": "sse",
       "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+#### For streamable-http transport
+
+```json
+"mcp": {
+  "servers": {
+    "luno": {
+      "type": "streamable-http",
+      "url": "http://localhost:8080/mcp"
     }
   }
 }
