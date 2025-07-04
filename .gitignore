@@ -32,3 +32,4 @@ go.work.sum
 
 # MacOS files
 .DS_Store
+cmd/test_user_agent/

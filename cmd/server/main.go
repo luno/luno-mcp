@@ -133,7 +133,7 @@ func main() {
 	setupLogger(flags.LogLevel)
 
 	// Load configuration
-	cfg, err := config.Load(flags.LunoDomain)
+	cfg, err := config.Load(flags.LunoDomain, appName, appVersion)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
