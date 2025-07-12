@@ -180,6 +180,13 @@ func TestLoad(t *testing.T) {
 			if cfg.LunoClient == nil {
 				t.Error("Expected LunoClient to be non-nil")
 			}
+
+			// TODO: Update this assertion when luno-go provides a way to inspect User-Agent
+			// For now, this is a placeholder to indicate the intent.
+			// Example of a possible future assertion:
+			// if cfg.LunoClient.UserAgent() != "Luno MCP Server" {
+			// 	t.Errorf("Expected User-Agent to be 'Luno MCP Server', got %q", cfg.LunoClient.UserAgent())
+			// }
 		})
 	}
 }

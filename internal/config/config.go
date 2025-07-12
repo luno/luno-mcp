@@ -64,7 +64,7 @@ func Load(domainOverride string) (*Config, error) {
 	}
 
 	// Create Luno client
-	client := luno.NewClient()
+	client := luno.NewClient(luno.WithUserAgent("Luno MCP Server"))
 	if domain != DefaultLunoDomain {
 		client.SetBaseURL(fmt.Sprintf("https://%s", domain))
 	}
