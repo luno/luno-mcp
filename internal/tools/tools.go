@@ -27,6 +27,7 @@ const (
 const (
 	GetBalancesToolID      = "get_balances"
 	GetTickerToolID        = "get_ticker"
+	GetTickersToolID       = "get_tickers"
 	GetOrderBookToolID     = "get_order_book"
 	CreateOrderToolID      = "create_order"
 	CancelOrderToolID      = "cancel_order"
@@ -34,7 +35,6 @@ const (
 	ListTransactionsToolID = "list_transactions"
 	GetTransactionToolID   = "get_transaction"
 	ListTradesToolID       = "list_trades"
-	GetTickersToolID       = "get_tickers"
 	GetCandlesToolID       = "get_candles"
 	GetMarketsInfoToolID   = "get_markets_info"
 )
@@ -516,6 +516,9 @@ func HandleListOrders(cfg *config.Config) server.ToolHandlerFunc {
 		// Get the pair if provided, otherwise it will be an empty string.
 		// An empty pair string will result in fetching orders for all pairs.
 		pair := request.GetString("pair", "")
+		if pair != "" {
+			pair = normalizeCurrencyPair(pair)
+		}
 
 		// Default to 100 if not present
 		limit := request.GetFloat("limit", 100)
