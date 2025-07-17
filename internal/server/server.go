@@ -89,6 +89,15 @@ func registerTools(server *mcpserver.MCPServer, cfg *config.Config) {
 	// Add trades tools
 	listTradesTool := tools.NewListTradesTool()
 	server.AddTool(listTradesTool, tools.HandleListTrades(cfg))
+
+	getTickersTool := tools.NewGetTickersTool()
+	server.AddTool(getTickersTool, tools.HandleGetTickers(cfg))
+
+	getCandlesTool := tools.NewGetCandlesTool()
+	server.AddTool(getCandlesTool, tools.HandleGetCandles(cfg))
+
+	getMarketsInfoTool := tools.NewGetMarketsInfoTool()
+	server.AddTool(getMarketsInfoTool, tools.HandleGetMarketsInfo(cfg))
 }
 
 // ServeStdio starts the server using the Stdio transport

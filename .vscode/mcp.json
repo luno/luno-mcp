@@ -31,7 +31,7 @@
     }
   ],
   "servers": {
-    "luno": {
+    "luno-local": {
       "command": "sh",
         "args": ["-c", "cd ${workspaceFolder} && make build && exec ./luno-mcp"], // Build and run local binary, so that we can test changes locally.
       "env": {

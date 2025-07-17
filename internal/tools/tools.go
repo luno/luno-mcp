@@ -226,8 +226,7 @@ func NewGetCandlesTool() mcp.Tool {
 		),
 		mcp.WithNumber(
 			"since",
-			mcp.Required(),
-			mcp.Description("Filter to candles starting on or after this timestamp (Unix milliseconds)"),
+			mcp.Description("Filter to candles starting on or after this timestamp (Unix milliseconds). Defaults to 24 hours ago."),
 		),
 		mcp.WithNumber(
 			"duration",
@@ -246,11 +245,14 @@ func HandleGetCandles(cfg *config.Config) server.ToolHandlerFunc {
 		}
 		pair = normalizeCurrencyPair(pair)
 
-		sinceFloat, err := request.RequireFloat("since")
-		if err != nil {
-			return mcp.NewToolResultErrorFromErr("getting since from request", err), nil
+		sinceFloat := request.GetFloat("since", 0)
+		var since luno.Time
+		if sinceFloat == 0 {
+			// Default to 24 hours ago if since is not provided or is 0
+			since = luno.Time(time.Now().Add(-24 * time.Hour))
+		} else {
+			since = luno.Time(time.UnixMilli(int64(sinceFloat)))
 		}
-		since := luno.Time(time.UnixMilli(int64(sinceFloat)))
 
 		durationFloat, err := request.RequireFloat("duration")
 		if err != nil {
