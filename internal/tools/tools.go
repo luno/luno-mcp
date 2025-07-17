@@ -34,6 +34,9 @@ const (
 	ListTransactionsToolID = "list_transactions"
 	GetTransactionToolID   = "get_transaction"
 	ListTradesToolID       = "list_trades"
+	GetTickersToolID       = "get_tickers"
+	GetCandlesToolID       = "get_candles"
+	GetMarketsInfoToolID   = "get_markets_info"
 )
 
 // ===== Balance Tools =====
@@ -49,7 +52,9 @@ func NewGetBalancesTool() mcp.Tool {
 // HandleGetBalances handles the get_balances tool
 func HandleGetBalances(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Since we're using a private API endpoint, authentication errors will be handled by the API call
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
 
 		balances, err := cfg.LunoClient.GetBalances(ctx, &luno.GetBalancesRequest{})
 		if err != nil {
@@ -169,6 +174,148 @@ func HandleGetOrderBook(cfg *config.Config) server.ToolHandlerFunc {
 	}
 }
 
+// NewGetTickersTool creates a new tool for getting ticker information for all currency pairs
+func NewGetTickersTool() mcp.Tool {
+	return mcp.NewTool(
+		GetTickersToolID,
+		mcp.WithDescription("List tickers for all currency pairs"),
+		mcp.WithString(
+			"pair",
+			mcp.Description("Return tickers for multiple markets (e.g., XBTZAR,ETHZAR)"),
+		),
+	)
+}
+
+// HandleGetTickers handles the get_tickers tool
+func HandleGetTickers(cfg *config.Config) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		pairsStr := request.GetString("pair", "")
+		var pairs []string
+		if pairsStr != "" {
+			pairs = strings.Split(pairsStr, ",")
+			for i, p := range pairs {
+				pairs[i] = normalizeCurrencyPair(p)
+			}
+		}
+
+		tickers, err := cfg.LunoClient.GetTickers(ctx, &luno.GetTickersRequest{
+			Pair: pairs,
+		})
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting tickers", err), nil
+		}
+
+		resultJSON, err := json.MarshalIndent(tickers, "", "  ")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal tickers: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(string(resultJSON)), nil
+	}
+}
+
+// NewGetCandlesTool creates a new tool for getting candlestick market data
+func NewGetCandlesTool() mcp.Tool {
+	return mcp.NewTool(
+		GetCandlesToolID,
+		mcp.WithDescription("Get candlestick market data for a currency pair"),
+		mcp.WithString(
+			"pair",
+			mcp.Required(),
+			mcp.Description(ErrTradingPairDesc),
+		),
+		mcp.WithNumber(
+			"since",
+			mcp.Required(),
+			mcp.Description("Filter to candles starting on or after this timestamp (Unix milliseconds)"),
+		),
+		mcp.WithNumber(
+			"duration",
+			mcp.Required(),
+			mcp.Description("Candle duration in seconds (e.g., 60 for 1m, 300 for 5m, 3600 for 1h)"),
+		),
+	)
+}
+
+// HandleGetCandles handles the get_candles tool
+func HandleGetCandles(cfg *config.Config) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		pair, err := request.RequireString("pair")
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting pair from request", err), nil
+		}
+		pair = normalizeCurrencyPair(pair)
+
+		sinceFloat, err := request.RequireFloat("since")
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting since from request", err), nil
+		}
+		since := luno.Time(time.UnixMilli(int64(sinceFloat)))
+
+		durationFloat, err := request.RequireFloat("duration")
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting duration from request", err), nil
+		}
+		duration := int64(durationFloat)
+
+		candles, err := cfg.LunoClient.GetCandles(ctx, &luno.GetCandlesRequest{
+			Pair:     pair,
+			Since:    since,
+			Duration: duration,
+		})
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting candles", err), nil
+		}
+
+		resultJSON, err := json.MarshalIndent(candles, "", "  ")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal candles: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(string(resultJSON)), nil
+	}
+}
+
+// NewGetMarketsInfoTool creates a new tool for getting market information
+func NewGetMarketsInfoTool() mcp.Tool {
+	return mcp.NewTool(
+		GetMarketsInfoToolID,
+		mcp.WithDescription("List all supported markets parameter information"),
+		mcp.WithString(
+			"pair",
+			mcp.Description("List of market pairs to return (e.g., XBTZAR,ETHZAR)"),
+		),
+	)
+}
+
+// HandleGetMarketsInfo handles the get_markets_info tool
+func HandleGetMarketsInfo(cfg *config.Config) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		pairsStr := request.GetString("pair", "")
+		var pairs []string
+		if pairsStr != "" {
+			pairs = strings.Split(pairsStr, ",")
+			for i, p := range pairs {
+				pairs[i] = normalizeCurrencyPair(p)
+			}
+		}
+
+		markets, err := cfg.LunoClient.Markets(ctx, &luno.MarketsRequest{
+			Pair: pairs,
+		})
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting markets info", err), nil
+		}
+
+		resultJSON, err := json.MarshalIndent(markets, "", "  ")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal markets info: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(string(resultJSON)), nil
+	}
+}
+
 // ===== Trading Tools =====
 
 // NewCreateOrderTool creates a new tool for creating limit orders
@@ -204,7 +351,9 @@ func NewCreateOrderTool() mcp.Tool {
 // TODO: Add HandleCreateMarketOrder function for market orders
 func HandleCreateOrder(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Since we're using a private API endpoint, authentication errors will be handled by the API call
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
 
 		pair, err := request.RequireString("pair")
 		if err != nil {
@@ -278,8 +427,8 @@ func HandleCreateOrder(cfg *config.Config) server.ToolHandlerFunc {
 		order, err := cfg.LunoClient.PostLimitOrder(ctx, createReq)
 		if err != nil {
 			// If the order fails despite our validation, provide detailed error information
-			errorMsg := fmt.Sprintf("Failed to create limit order: %v\\n\\n"+
-				"Here's what we know about this market:\\n%s\\n\\n"+
+			errorMsg := fmt.Sprintf("Failed to create limit order: %v\n\n"+
+				"Here's what we know about this market:\n%s\n\n"+
 				"This may be due to insufficient balance, market conditions, or API limits.",
 				err, marketInfoString)
 
@@ -292,7 +441,7 @@ func HandleCreateOrder(cfg *config.Config) server.ToolHandlerFunc {
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal order result: %v", err)), nil
 		}
 
-		successMsg := fmt.Sprintf("Order created successfully!\\n\\n%s\\n\\n%s",
+		successMsg := fmt.Sprintf("Order created successfully!\n\n%s\n\n%s",
 			string(resultJSON), marketInfoString)
 		return mcp.NewToolResultText(successMsg), nil
 	}
@@ -314,7 +463,9 @@ func NewCancelOrderTool() mcp.Tool {
 // HandleCancelOrder handles the cancel_order tool
 func HandleCancelOrder(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Since we're using a private API endpoint, authentication errors will be handled by the API call
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
 
 		orderID, err := request.RequireString("order_id")
 		if err != nil {
@@ -356,7 +507,9 @@ func NewListOrdersTool() mcp.Tool {
 // HandleListOrders handles the list_orders tool
 func HandleListOrders(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Since we're using a private API endpoint, authentication errors will be handled by the API call
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
 
 		// Get the pair if provided, otherwise it will be an empty string.
 		// An empty pair string will result in fetching orders for all pairs.
@@ -410,7 +563,9 @@ func NewListTransactionsTool() mcp.Tool {
 // HandleListTransactions handles the list_transactions tool
 func HandleListTransactions(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Since we're using a private API endpoint, authentication errors will be handled by the API call
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
 
 		accountIDStr, err := request.RequireString("account_id")
 		if err != nil {
@@ -470,7 +625,9 @@ func NewGetTransactionTool() mcp.Tool {
 // HandleGetTransaction handles the get_transaction tool
 func HandleGetTransaction(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Since we're using a private API endpoint, authentication errors will be handled by the API call
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
 
 		accountIDStr, err := request.RequireString("account_id")
 		if err != nil {
@@ -550,6 +707,11 @@ func NewListTradesTool() mcp.Tool {
 // HandleListTrades handles the list_trades tool
 func HandleListTrades(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		// This is a public endpoint, so no authentication check is needed here.
+		// However, the LunoClient.ListTrades method might still require authentication
+		// depending on the underlying luno-go library implementation.
+		// For now, we assume it can be called unauthenticated.
+
 		pair, err := request.RequireString("pair")
 		if err != nil {
 			return mcp.NewToolResultErrorFromErr("getting pair from request", err), nil

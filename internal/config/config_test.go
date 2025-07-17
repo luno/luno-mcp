@@ -86,24 +86,26 @@ func TestLoad(t *testing.T) {
 		debugEnv       string
 		expectedError  string
 		expectedDomain string
+		expectAuth     bool
 	}{
 		{
 			name:           "valid credentials with defaults",
 			apiKeyID:       "test_key_id",
 			apiSecret:      "test_secret",
 			expectedDomain: DefaultLunoDomain,
+			expectAuth:     true,
 		},
 		{
-			name:          "missing api key id",
-			apiKeyID:      "",
-			apiSecret:     "test_secret",
-			expectedError: "luno API credentials not found",
+			name:       "missing api key id",
+			apiKeyID:   "",
+			apiSecret:  "test_secret",
+			expectAuth: false,
 		},
 		{
-			name:          "missing api secret",
-			apiKeyID:      "test_key_id",
-			apiSecret:     "",
-			expectedError: "luno API credentials not found",
+			name:       "missing api secret",
+			apiKeyID:   "test_key_id",
+			apiSecret:  "",
+			expectAuth: false,
 		},
 		{
 			name:           "custom domain from environment",
@@ -111,6 +113,7 @@ func TestLoad(t *testing.T) {
 			apiSecret:      "test_secret",
 			domainEnv:      "sandbox.luno.com",
 			expectedDomain: "sandbox.luno.com",
+			expectAuth:     true,
 		},
 		{
 			name:           "domain override takes precedence",
@@ -119,30 +122,35 @@ func TestLoad(t *testing.T) {
 			domainEnv:      "env.luno.com",
 			domainOverride: "override.luno.com",
 			expectedDomain: "override.luno.com",
+			expectAuth:     true,
 		},
 		{
-			name:      "debug mode enabled with true",
-			apiKeyID:  "test_key_id",
-			apiSecret: "test_secret",
-			debugEnv:  "true",
+			name:       "debug mode enabled with true",
+			apiKeyID:   "test_key_id",
+			apiSecret:  "test_secret",
+			debugEnv:   "true",
+			expectAuth: true,
 		},
 		{
-			name:      "debug mode enabled with 1",
-			apiKeyID:  "test_key_id",
-			apiSecret: "test_secret",
-			debugEnv:  "1",
+			name:       "debug mode enabled with 1",
+			apiKeyID:   "test_key_id",
+			apiSecret:  "test_secret",
+			debugEnv:   "1",
+			expectAuth: true,
 		},
 		{
-			name:      "debug mode enabled with yes",
-			apiKeyID:  "test_key_id",
-			apiSecret: "test_secret",
-			debugEnv:  "yes",
+			name:       "debug mode enabled with yes",
+			apiKeyID:   "test_key_id",
+			apiSecret:  "test_secret",
+			debugEnv:   "yes",
+			expectAuth: true,
 		},
 		{
-			name:      "debug mode disabled with false",
-			apiKeyID:  "test_key_id",
-			apiSecret: "test_secret",
-			debugEnv:  "false",
+			name:       "debug mode disabled with false",
+			apiKeyID:   "test_key_id",
+			apiSecret:  "test_secret",
+			debugEnv:   "false",
+			expectAuth: true,
 		},
 	}
 
@@ -179,6 +187,10 @@ func TestLoad(t *testing.T) {
 
 			if cfg.LunoClient == nil {
 				t.Error("Expected LunoClient to be non-nil")
+			}
+
+			if cfg.IsAuthenticated != tc.expectAuth {
+				t.Errorf("Expected IsAuthenticated to be %v, but got %v", tc.expectAuth, cfg.IsAuthenticated)
 			}
 		})
 	}
