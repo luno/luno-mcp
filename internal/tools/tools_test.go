@@ -135,6 +135,24 @@ func TestToolCreation(t *testing.T) {
 			toolName: ListTradesToolID,
 			params:   []string{"pair", "since"},
 		},
+		{
+			name:     "GetTickers tool",
+			toolFunc: NewGetTickersTool,
+			toolName: GetTickersToolID,
+			params:   []string{"pair"},
+		},
+		{
+			name:     "GetCandles tool",
+			toolFunc: NewGetCandlesTool,
+			toolName: GetCandlesToolID,
+			params:   []string{"pair", "since", "duration"},
+		},
+		{
+			name:     "GetMarketsInfo tool",
+			toolFunc: NewGetMarketsInfoTool,
+			toolName: GetMarketsInfoToolID,
+			params:   []string{"pair"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -192,10 +210,11 @@ func getTextContentFromResult(t *testing.T, result *mcp.CallToolResult) string {
 
 func TestHandleGetBalances(t *testing.T) {
 	tests := []struct {
-		name          string
-		mockSetup     func(*testing.T, *sdk.MockLunoClient)
-		expectedError bool
-		errorContains string
+		name            string
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
 	}{
 		{
 			name: "successful get balances",
@@ -230,7 +249,8 @@ func TestHandleGetBalances(t *testing.T) {
 				mockClient.EXPECT().GetBalances(context.Background(), &luno.GetBalancesRequest{}).
 					Return(mockResponse, nil)
 			},
-			expectedError: false,
+			isAuthenticated: true,
+			expectedError:   false,
 		},
 		{
 			name: "GetBalances API error",
@@ -238,8 +258,16 @@ func TestHandleGetBalances(t *testing.T) {
 				mockClient.EXPECT().GetBalances(context.Background(), &luno.GetBalancesRequest{}).
 					Return(nil, errors.New(apiErrorStr))
 			},
-			expectedError: true,
-			errorContains: "Failed to get balances",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Failed to get balances",
+		},
+		{
+			name:            "unauthenticated get balances",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
 		},
 	}
 
@@ -249,7 +277,8 @@ func TestHandleGetBalances(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
 			}
 
 			handler := HandleGetBalances(cfg)
@@ -353,7 +382,8 @@ func TestHandleGetTicker(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: true, // Public endpoint, but setting to true for consistency
 			}
 
 			handler := HandleGetTicker(cfg)
@@ -439,7 +469,8 @@ func TestHandleGetOrderBook(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: true, // Public endpoint
 			}
 
 			handler := HandleGetOrderBook(cfg)
@@ -470,11 +501,12 @@ func TestHandleGetOrderBook(t *testing.T) {
 
 func TestHandleCancelOrder(t *testing.T) {
 	tests := []struct {
-		name          string
-		requestParams map[string]any
-		mockSetup     func(*testing.T, *sdk.MockLunoClient)
-		expectedError bool
-		errorContains string
+		name            string
+		requestParams   map[string]any
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
 	}{
 		{
 			name: "successful cancel order",
@@ -488,14 +520,16 @@ func TestHandleCancelOrder(t *testing.T) {
 				mockClient.EXPECT().StopOrder(context.Background(), &luno.StopOrderRequest{OrderId: "12345"}).
 					Return(mockResponse, nil)
 			},
-			expectedError: false,
+			isAuthenticated: true,
+			expectedError:   false,
 		},
 		{
-			name:          "missing order_id parameter",
-			requestParams: map[string]any{},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed for this case */ },
-			expectedError: true,
-			errorContains: "getting order_id from request",
+			name:            "missing order_id parameter",
+			requestParams:   map[string]any{},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed for this case */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "getting order_id from request",
 		},
 		{
 			name: "CancelOrder API error",
@@ -506,8 +540,17 @@ func TestHandleCancelOrder(t *testing.T) {
 				mockClient.EXPECT().StopOrder(context.Background(), &luno.StopOrderRequest{OrderId: "invalid_id"}).
 					Return(nil, errors.New("Order not found"))
 			},
-			expectedError: true,
-			errorContains: "Failed to cancel order",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Failed to cancel order",
+		},
+		{
+			name:            "unauthenticated cancel order",
+			requestParams:   map[string]any{"order_id": "12345"},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
 		},
 	}
 
@@ -517,7 +560,8 @@ func TestHandleCancelOrder(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
 			}
 
 			handler := HandleCancelOrder(cfg)
@@ -541,11 +585,12 @@ func TestHandleCancelOrder(t *testing.T) {
 
 func TestHandleListOrders(t *testing.T) {
 	tests := []struct {
-		name          string
-		requestParams map[string]any
-		mockSetup     func(*testing.T, *sdk.MockLunoClient)
-		expectedError bool
-		errorContains string
+		name            string
+		requestParams   map[string]any
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
 	}{
 		{
 			name: "successful list orders with pair",
@@ -578,7 +623,25 @@ func TestHandleListOrders(t *testing.T) {
 					Limit: 50,
 				}).Return(mockResponse, nil)
 			},
-			expectedError: false,
+			isAuthenticated: true,
+			expectedError:   false,
+		},
+		{
+			name: "successful list orders with pair normalization",
+			requestParams: map[string]any{
+				"pair": "BTCZAR",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockResponse := &luno.ListOrdersResponse{
+					Orders: []luno.Order{},
+				}
+				mockClient.EXPECT().ListOrders(context.Background(), &luno.ListOrdersRequest{
+					Pair:  "XBTZAR",
+					Limit: 100, // Default limit
+				}).Return(mockResponse, nil)
+			},
+			isAuthenticated: true,
+			expectedError:   false,
 		},
 		{
 			name:          "successful list orders without pair",
@@ -592,7 +655,8 @@ func TestHandleListOrders(t *testing.T) {
 					Limit: 100, // Default limit
 				}).Return(mockResponse, nil)
 			},
-			expectedError: false,
+			isAuthenticated: true,
+			expectedError:   false,
 		},
 		{
 			name: "ListOrders API error",
@@ -605,8 +669,17 @@ func TestHandleListOrders(t *testing.T) {
 					Limit: 100, // Default limit
 				}).Return(nil, errors.New(invalidPairStr))
 			},
-			expectedError: true,
-			errorContains: "Failed to list orders",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Failed to list orders",
+		},
+		{
+			name:            "unauthenticated list orders",
+			requestParams:   map[string]any{},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
 		},
 	}
 
@@ -616,7 +689,8 @@ func TestHandleListOrders(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
 			}
 
 			handler := HandleListOrders(cfg)
@@ -647,11 +721,12 @@ func TestHandleListOrders(t *testing.T) {
 
 func TestHandleListTransactions(t *testing.T) {
 	tests := []struct {
-		name          string
-		requestParams map[string]any
-		mockSetup     func(*testing.T, *sdk.MockLunoClient)
-		expectedError bool
-		errorContains string
+		name            string
+		requestParams   map[string]any
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
 	}{
 		{
 			name: "successful list transactions",
@@ -684,23 +759,26 @@ func TestHandleListTransactions(t *testing.T) {
 					MaxRow: 10,
 				}).Return(mockResponse, nil)
 			},
-			expectedError: false,
+			isAuthenticated: true,
+			expectedError:   false,
 		},
 		{
-			name:          "missing account_id parameter",
-			requestParams: map[string]any{},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed for this case */ },
-			expectedError: true,
-			errorContains: "getting account_id from request",
+			name:            "missing account_id parameter",
+			requestParams:   map[string]any{},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed for this case */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "getting account_id from request",
 		},
 		{
 			name: "invalid account_id format",
 			requestParams: map[string]any{
 				"account_id": "not_a_number",
 			},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed for this case */ },
-			expectedError: true,
-			errorContains: "Invalid account ID format",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed for this case */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid account ID format",
 		},
 		{
 			name: "ListTransactions API error",
@@ -715,8 +793,17 @@ func TestHandleListTransactions(t *testing.T) {
 					MaxRow: 100, // Default max_row
 				}).Return(nil, errors.New("Account not found"))
 			},
-			expectedError: true,
-			errorContains: "Failed to list transactions",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Failed to list transactions",
+		},
+		{
+			name:            "unauthenticated list transactions",
+			requestParams:   map[string]any{"account_id": "123456"},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
 		},
 	}
 
@@ -726,7 +813,8 @@ func TestHandleListTransactions(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
 			}
 
 			handler := HandleListTransactions(cfg)
@@ -757,11 +845,12 @@ func TestHandleListTransactions(t *testing.T) {
 
 func TestHandleGetTransaction(t *testing.T) {
 	tests := []struct {
-		name          string
-		requestParams map[string]any
-		mockSetup     func(*testing.T, *sdk.MockLunoClient)
-		expectedError bool
-		errorContains string
+		name            string
+		requestParams   map[string]any
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
 	}{
 		{
 			name: "successful get transaction",
@@ -802,7 +891,8 @@ func TestHandleGetTransaction(t *testing.T) {
 					MaxRow: 1000, // Default max_row for GetTransaction
 				}).Return(mockResponse, nil)
 			},
-			expectedError: false,
+			isAuthenticated: true,
+			expectedError:   false,
 		},
 		{
 			name: "transaction not found",
@@ -822,26 +912,29 @@ func TestHandleGetTransaction(t *testing.T) {
 					MaxRow: 1000,
 				}).Return(mockResponse, nil)
 			},
-			expectedError: true,
-			errorContains: "Transaction not found",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Transaction not found",
 		},
 		{
 			name: "missing account_id parameter",
 			requestParams: map[string]any{
 				"transaction_id": "5",
 			},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
-			expectedError: true,
-			errorContains: "getting account_id from request",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "getting account_id from request",
 		},
 		{
 			name: "missing transaction_id parameter",
 			requestParams: map[string]any{
 				"account_id": "123456",
 			},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
-			expectedError: true,
-			errorContains: "getting transaction_id from request",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "getting transaction_id from request",
 		},
 		{
 			name: "invalid account_id format",
@@ -849,9 +942,10 @@ func TestHandleGetTransaction(t *testing.T) {
 				"account_id":     "not_a_number",
 				"transaction_id": "5",
 			},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
-			expectedError: true,
-			errorContains: "Invalid account ID format",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid account ID format",
 		},
 		{
 			name: "invalid transaction_id format",
@@ -859,9 +953,18 @@ func TestHandleGetTransaction(t *testing.T) {
 				"account_id":     "123456",
 				"transaction_id": "not_a_number",
 			},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
-			expectedError: true,
-			errorContains: "Invalid transaction ID format",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid transaction ID format",
+		},
+		{
+			name:            "unauthenticated get transaction",
+			requestParams:   map[string]any{"account_id": "123456", "transaction_id": "5"},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
 		},
 	}
 
@@ -871,7 +974,8 @@ func TestHandleGetTransaction(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
 			}
 
 			handler := HandleGetTransaction(cfg)
@@ -1041,11 +1145,12 @@ func createMockRequest(params map[string]any) mcp.CallToolRequest {
 
 func TestHandleCreateOrder(t *testing.T) {
 	tests := []struct {
-		name          string
-		requestParams map[string]any
-		mockSetup     func(*testing.T, *sdk.MockLunoClient)
-		expectedError bool
-		errorContains string
+		name            string
+		requestParams   map[string]any
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
 	}{
 		{
 			name: "successful create order",
@@ -1096,7 +1201,8 @@ func TestHandleCreateOrder(t *testing.T) {
 					Price:  price,
 				}).Return(mockResponse, nil)
 			},
-			expectedError: false,
+			isAuthenticated: true,
+			expectedError:   false,
 		},
 		{
 			name: "CreateOrder PostLimitOrder API error",
@@ -1144,8 +1250,9 @@ func TestHandleCreateOrder(t *testing.T) {
 					Price:  price,
 				}).Return(nil, errors.New(apiErrorStr))
 			},
-			expectedError: true,
-			errorContains: "Failed to create limit order",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Failed to create limit order",
 		},
 		{
 			name: "CreateOrder GetTicker API error",
@@ -1158,8 +1265,9 @@ func TestHandleCreateOrder(t *testing.T) {
 			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
 				mockClient.EXPECT().GetTicker(mock.Anything, mock.Anything).Return(nil, errors.New("API error"))
 			},
-			expectedError: true,
-			errorContains: "Unable to create order: Failed to retrieve market information for pair XBTZAR",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Unable to create order: Failed to retrieve market information for pair XBTZAR",
 		},
 		{
 			name: "CreateOrder GetOrderBook API error",
@@ -1173,8 +1281,9 @@ func TestHandleCreateOrder(t *testing.T) {
 				mockClient.EXPECT().GetTicker(mock.Anything, mock.Anything).Return(&luno.GetTickerResponse{Pair: "XBTZAR"}, nil)
 				mockClient.EXPECT().GetOrderBook(mock.Anything, mock.Anything).Return(nil, errors.New("API error"))
 			},
-			expectedError: true,
-			errorContains: "Unable to create order: Failed to retrieve market information for pair XBTZAR",
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Unable to create order: Failed to retrieve market information for pair XBTZAR",
 		},
 		{
 			name: "no pair for create order",
@@ -1183,9 +1292,10 @@ func TestHandleCreateOrder(t *testing.T) {
 				"volume": "0.01",
 				"price":  "1000000",
 			},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
-			expectedError: true,
-			errorContains: "required argument \"pair\" not found",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "required argument \"pair\" not found",
 		},
 		{
 			name: "invalid volume for create order",
@@ -1195,9 +1305,18 @@ func TestHandleCreateOrder(t *testing.T) {
 				"volume": "invalid_volume",
 				"price":  "1000000",
 			},
-			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
-			expectedError: true,
-			errorContains: "Invalid volume format",
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) { /* No mock setup needed */ },
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid volume format",
+		},
+		{
+			name:            "unauthenticated create order",
+			requestParams:   map[string]any{"pair": "XBTZAR", "type": "BUY", "volume": "0.01", "price": "1000000"},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
 		},
 	}
 
@@ -1207,7 +1326,8 @@ func TestHandleCreateOrder(t *testing.T) {
 			tt.mockSetup(t, mockClient)
 
 			cfg := &config.Config{
-				LunoClient: mockClient,
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
 			}
 
 			handler := HandleCreateOrder(cfg)
@@ -1227,6 +1347,222 @@ func TestHandleCreateOrder(t *testing.T) {
 				assert.NotEmpty(t, textContent)
 				assert.Contains(t, textContent, "Order created successfully!")
 				assert.Contains(t, textContent, "BXMC2SEAS4KF5S2")
+			}
+		})
+	}
+}
+
+func TestHandleGetTickers(t *testing.T) {
+	tests := []struct {
+		name          string
+		requestParams map[string]any
+		mockSetup     func(*testing.T, *sdk.MockLunoClient)
+		expectedError bool
+		errorContains string
+	}{
+		{
+			name: "successful get tickers with pair",
+			requestParams: map[string]any{
+				"pair": "XBTZAR,ETHZAR",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockResponse := &luno.GetTickersResponse{
+					Tickers: []luno.Ticker{
+						{Pair: "XBTZAR"},
+						{Pair: "ETHZAR"},
+					},
+				}
+				mockClient.EXPECT().GetTickers(context.Background(), &luno.GetTickersRequest{Pair: []string{"XBTZAR", "ETHZAR"}}).
+					Return(mockResponse, nil)
+			},
+			expectedError: false,
+		},
+		{
+			name:          "successful get tickers without pair",
+			requestParams: map[string]any{},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockResponse := &luno.GetTickersResponse{
+					Tickers: []luno.Ticker{},
+				}
+				mockClient.EXPECT().GetTickers(context.Background(), &luno.GetTickersRequest{Pair: nil}).
+					Return(mockResponse, nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "GetTickers API error",
+			requestParams: map[string]any{
+				"pair": "INVALID",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockClient.EXPECT().GetTickers(context.Background(), &luno.GetTickersRequest{Pair: []string{"INVALID"}}).
+					Return(nil, errors.New(invalidPairStr))
+			},
+			expectedError: true,
+			errorContains: "getting tickers",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := sdk.NewMockLunoClient(t)
+			tt.mockSetup(t, mockClient)
+
+			cfg := &config.Config{LunoClient: mockClient}
+			handler := HandleGetTickers(cfg)
+			request := createMockRequest(tt.requestParams)
+
+			result, err := handler(context.Background(), request)
+			assert.NoError(t, err)
+			if tt.expectedError {
+				assert.True(t, result.IsError)
+				if tt.errorContains != "" {
+					errorMsg := getTextContentFromResult(t, result)
+					assert.Contains(t, errorMsg, tt.errorContains)
+				}
+			} else {
+				assert.False(t, result.IsError)
+				textContent := getTextContentFromResult(t, result)
+				assert.NotEmpty(t, textContent)
+			}
+		})
+	}
+}
+
+func TestHandleGetCandles(t *testing.T) {
+	tests := []struct {
+		name          string
+		requestParams map[string]any
+		mockSetup     func(*testing.T, *sdk.MockLunoClient)
+		expectedError bool
+		errorContains string
+	}{
+		{
+			name: "successful get candles",
+			requestParams: map[string]any{
+				"pair":     "XBTZAR",
+				"since":    float64(testTimestamp),
+				"duration": float64(3600),
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockResponse := &luno.GetCandlesResponse{
+					Candles: []luno.Candle{
+						{Timestamp: luno.Time(time.UnixMilli(testTimestamp))},
+					},
+				}
+				mockClient.EXPECT().GetCandles(context.Background(), &luno.GetCandlesRequest{
+					Pair:     "XBTZAR",
+					Since:    luno.Time(time.UnixMilli(testTimestamp)),
+					Duration: 3600,
+				}).Return(mockResponse, nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "missing duration",
+			requestParams: map[string]any{
+				"pair": "XBTZAR",
+			},
+			mockSetup:     func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			expectedError: true,
+			errorContains: "getting duration from request",
+		},
+		{
+			name: "GetCandles API error",
+			requestParams: map[string]any{
+				"pair":     "XBTZAR",
+				"duration": float64(3600),
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockClient.EXPECT().GetCandles(mock.Anything, mock.Anything).Return(nil, errors.New("API error"))
+			},
+			expectedError: true,
+			errorContains: "getting candles",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := sdk.NewMockLunoClient(t)
+			tt.mockSetup(t, mockClient)
+
+			cfg := &config.Config{LunoClient: mockClient}
+			handler := HandleGetCandles(cfg)
+			request := createMockRequest(tt.requestParams)
+
+			result, err := handler(context.Background(), request)
+			assert.NoError(t, err)
+			if tt.expectedError {
+				assert.True(t, result.IsError)
+				if tt.errorContains != "" {
+					errorMsg := getTextContentFromResult(t, result)
+					assert.Contains(t, errorMsg, tt.errorContains)
+				}
+			} else {
+				assert.False(t, result.IsError)
+			}
+		})
+	}
+}
+
+func TestHandleGetMarketsInfo(t *testing.T) {
+	tests := []struct {
+		name          string
+		requestParams map[string]any
+		mockSetup     func(*testing.T, *sdk.MockLunoClient)
+		expectedError bool
+		errorContains string
+	}{
+		{
+			name: "successful get markets info",
+			requestParams: map[string]any{
+				"pair": "XBTZAR,ETHZAR",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockResponse := &luno.MarketsResponse{
+					Markets: []luno.MarketInfo{
+						{MarketId: "XBTZAR"},
+						{MarketId: "ETHZAR"},
+					},
+				}
+				mockClient.EXPECT().Markets(context.Background(), &luno.MarketsRequest{Pair: []string{"XBTZAR", "ETHZAR"}}).
+					Return(mockResponse, nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "GetMarketsInfo API error",
+			requestParams: map[string]any{
+				"pair": "INVALID",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockClient.EXPECT().Markets(context.Background(), &luno.MarketsRequest{Pair: []string{"INVALID"}}).
+					Return(nil, errors.New("API error"))
+			},
+			expectedError: true,
+			errorContains: "getting markets info",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := sdk.NewMockLunoClient(t)
+			tt.mockSetup(t, mockClient)
+
+			cfg := &config.Config{LunoClient: mockClient}
+			handler := HandleGetMarketsInfo(cfg)
+			request := createMockRequest(tt.requestParams)
+
+			result, err := handler(context.Background(), request)
+			assert.NoError(t, err)
+			if tt.expectedError {
+				assert.True(t, result.IsError)
+				if tt.errorContains != "" {
+					errorMsg := getTextContentFromResult(t, result)
+					assert.Contains(t, errorMsg, tt.errorContains)
+				}
+			} else {
+				assert.False(t, result.IsError)
 			}
 		})
 	}

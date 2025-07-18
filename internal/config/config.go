@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -26,6 +25,9 @@ const (
 type Config struct {
 	// Luno client
 	LunoClient sdk.LunoClient
+	// IsAuthenticated indicates if the LunoClient is authenticated with API keys.
+	// If false, only public API calls can be made.
+	IsAuthenticated bool
 }
 
 // Mask a string to show only the first 4 characters and replace the rest with asterisks
@@ -44,8 +46,8 @@ func Load(domainOverride string) (*Config, error) {
 	fmt.Printf("LUNO_API_KEY_ID value: %s (length: %d)\n", maskValue(apiKeyID), len(apiKeyID))
 	fmt.Printf("LUNO_API_SECRET value: %s (length: %d)\n", maskValue(apiKeySecret), len(apiKeySecret))
 
-	if apiKeyID == "" || apiKeySecret == "" {
-		return nil, errors.New("luno API credentials not found, please set LUNO_API_KEY_ID and LUNO_API_SECRET environment variables")
+	cfg := &Config{
+		LunoClient: luno.NewClient(),
 	}
 
 	// Set domain - first check command line override, then env var, then default
@@ -63,14 +65,21 @@ func Load(domainOverride string) (*Config, error) {
 		fmt.Printf("Using domain from command line: %s\n", domain)
 	}
 
-	// Create Luno client
-	client := luno.NewClient()
 	if domain != DefaultLunoDomain {
-		client.SetBaseURL(fmt.Sprintf("https://%s", domain))
+		cfg.LunoClient.SetBaseURL(fmt.Sprintf("https://%s", domain))
 	}
-	err := client.SetAuth(apiKeyID, apiKeySecret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to set Luno API credentials: %w", err)
+
+	// Only set authentication if both API Key ID and Secret are provided
+	if apiKeyID != "" && apiKeySecret != "" {
+		err := cfg.LunoClient.SetAuth(apiKeyID, apiKeySecret)
+		if err != nil {
+			return nil, fmt.Errorf("failed to set Luno API credentials: %w", err)
+		}
+		cfg.IsAuthenticated = true
+		fmt.Println("Luno client authenticated with provided API credentials.")
+	} else {
+		cfg.IsAuthenticated = false
+		fmt.Println("Luno API credentials not found. Operating in unauthenticated mode.")
 	}
 
 	// Check if debug mode is enabled via environment variable
@@ -86,10 +95,8 @@ func Load(domainOverride string) (*Config, error) {
 		}
 	}
 
-	client.SetDebug(debugMode)
-	return &Config{
-		LunoClient: client,
-	}, nil
+	cfg.LunoClient.SetDebug(debugMode)
+	return cfg, nil
 }
 
 // FormatCurrency formats a decimal amount with the currency code

@@ -582,3 +582,388 @@ func (_c *MockLunoClient_StopOrder_Call) RunAndReturn(run func(ctx context.Conte
 	_c.Call.Return(run)
 	return _c
 }
+
+// GetCandles provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) GetCandles(ctx context.Context, req *luno.GetCandlesRequest) (*luno.GetCandlesResponse, error) {
+	ret := _mock.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCandles")
+	}
+
+	var r0 *luno.GetCandlesResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.GetCandlesRequest) (*luno.GetCandlesResponse, error)); ok {
+		return returnFunc(ctx, req)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.GetCandlesRequest) *luno.GetCandlesResponse); ok {
+		r0 = returnFunc(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*luno.GetCandlesResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *luno.GetCandlesRequest) error); ok {
+		r1 = returnFunc(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockLunoClient_GetCandles_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCandles'
+type MockLunoClient_GetCandles_Call struct {
+	*mock.Call
+}
+
+// GetCandles is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *luno.GetCandlesRequest
+func (_e *MockLunoClient_Expecter) GetCandles(ctx interface{}, req interface{}) *MockLunoClient_GetCandles_Call {
+	return &MockLunoClient_GetCandles_Call{Call: _e.mock.On("GetCandles", ctx, req)}
+}
+
+func (_c *MockLunoClient_GetCandles_Call) Run(run func(ctx context.Context, req *luno.GetCandlesRequest)) *MockLunoClient_GetCandles_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *luno.GetCandlesRequest
+		if args[1] != nil {
+			arg1 = args[1].(*luno.GetCandlesRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_GetCandles_Call) Return(getCandlesResponse *luno.GetCandlesResponse, err error) *MockLunoClient_GetCandles_Call {
+	_c.Call.Return(getCandlesResponse, err)
+	return _c
+}
+
+func (_c *MockLunoClient_GetCandles_Call) RunAndReturn(run func(ctx context.Context, req *luno.GetCandlesRequest) (*luno.GetCandlesResponse, error)) *MockLunoClient_GetCandles_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTickers provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) GetTickers(ctx context.Context, req *luno.GetTickersRequest) (*luno.GetTickersResponse, error) {
+	ret := _mock.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTickers")
+	}
+
+	var r0 *luno.GetTickersResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.GetTickersRequest) (*luno.GetTickersResponse, error)); ok {
+		return returnFunc(ctx, req)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.GetTickersRequest) *luno.GetTickersResponse); ok {
+		r0 = returnFunc(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*luno.GetTickersResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *luno.GetTickersRequest) error); ok {
+		r1 = returnFunc(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockLunoClient_GetTickers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTickers'
+type MockLunoClient_GetTickers_Call struct {
+	*mock.Call
+}
+
+// GetTickers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *luno.GetTickersRequest
+func (_e *MockLunoClient_Expecter) GetTickers(ctx interface{}, req interface{}) *MockLunoClient_GetTickers_Call {
+	return &MockLunoClient_GetTickers_Call{Call: _e.mock.On("GetTickers", ctx, req)}
+}
+
+func (_c *MockLunoClient_GetTickers_Call) Run(run func(ctx context.Context, req *luno.GetTickersRequest)) *MockLunoClient_GetTickers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *luno.GetTickersRequest
+		if args[1] != nil {
+			arg1 = args[1].(*luno.GetTickersRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_GetTickers_Call) Return(getTickersResponse *luno.GetTickersResponse, err error) *MockLunoClient_GetTickers_Call {
+	_c.Call.Return(getTickersResponse, err)
+	return _c
+}
+
+func (_c *MockLunoClient_GetTickers_Call) RunAndReturn(run func(ctx context.Context, req *luno.GetTickersRequest) (*luno.GetTickersResponse, error)) *MockLunoClient_GetTickers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetOrderBookFull provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) GetOrderBookFull(ctx context.Context, req *luno.GetOrderBookFullRequest) (*luno.GetOrderBookFullResponse, error) {
+	ret := _mock.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOrderBookFull")
+	}
+
+	var r0 *luno.GetOrderBookFullResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.GetOrderBookFullRequest) (*luno.GetOrderBookFullResponse, error)); ok {
+		return returnFunc(ctx, req)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.GetOrderBookFullRequest) *luno.GetOrderBookFullResponse); ok {
+		r0 = returnFunc(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*luno.GetOrderBookFullResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *luno.GetOrderBookFullRequest) error); ok {
+		r1 = returnFunc(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockLunoClient_GetOrderBookFull_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOrderBookFull'
+type MockLunoClient_GetOrderBookFull_Call struct {
+	*mock.Call
+}
+
+// GetOrderBookFull is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *luno.GetOrderBookFullRequest
+func (_e *MockLunoClient_Expecter) GetOrderBookFull(ctx interface{}, req interface{}) *MockLunoClient_GetOrderBookFull_Call {
+	return &MockLunoClient_GetOrderBookFull_Call{Call: _e.mock.On("GetOrderBookFull", ctx, req)}
+}
+
+func (_c *MockLunoClient_GetOrderBookFull_Call) Run(run func(ctx context.Context, req *luno.GetOrderBookFullRequest)) *MockLunoClient_GetOrderBookFull_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *luno.GetOrderBookFullRequest
+		if args[1] != nil {
+			arg1 = args[1].(*luno.GetOrderBookFullRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_GetOrderBookFull_Call) Return(getOrderBookFullResponse *luno.GetOrderBookFullResponse, err error) *MockLunoClient_GetOrderBookFull_Call {
+	_c.Call.Return(getOrderBookFullResponse, err)
+	return _c
+}
+
+func (_c *MockLunoClient_GetOrderBookFull_Call) RunAndReturn(run func(ctx context.Context, req *luno.GetOrderBookFullRequest) (*luno.GetOrderBookFullResponse, error)) *MockLunoClient_GetOrderBookFull_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Markets provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) Markets(ctx context.Context, req *luno.MarketsRequest) (*luno.MarketsResponse, error) {
+	ret := _mock.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Markets")
+	}
+
+	var r0 *luno.MarketsResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.MarketsRequest) (*luno.MarketsResponse, error)); ok {
+		return returnFunc(ctx, req)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.MarketsRequest) *luno.MarketsResponse); ok {
+		r0 = returnFunc(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*luno.MarketsResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *luno.MarketsRequest) error); ok {
+		r1 = returnFunc(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockLunoClient_Markets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Markets'
+type MockLunoClient_Markets_Call struct {
+	*mock.Call
+}
+
+// Markets is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *luno.MarketsRequest
+func (_e *MockLunoClient_Expecter) Markets(ctx interface{}, req interface{}) *MockLunoClient_Markets_Call {
+	return &MockLunoClient_Markets_Call{Call: _e.mock.On("Markets", ctx, req)}
+}
+
+func (_c *MockLunoClient_Markets_Call) Run(run func(ctx context.Context, req *luno.MarketsRequest)) *MockLunoClient_Markets_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *luno.MarketsRequest
+		if args[1] != nil {
+			arg1 = args[1].(*luno.MarketsRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_Markets_Call) Return(marketsResponse *luno.MarketsResponse, err error) *MockLunoClient_Markets_Call {
+	_c.Call.Return(marketsResponse, err)
+	return _c
+}
+
+func (_c *MockLunoClient_Markets_Call) RunAndReturn(run func(ctx context.Context, req *luno.MarketsRequest) (*luno.MarketsResponse, error)) *MockLunoClient_Markets_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetAuth provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) SetAuth(id string, secret string) error {
+	ret := _mock.Called(id, secret)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetAuth")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = returnFunc(id, secret)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockLunoClient_SetAuth_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetAuth'
+type MockLunoClient_SetAuth_Call struct {
+	*mock.Call
+}
+
+// SetAuth is a helper method to define mock.On call
+//   - id string
+//   - secret string
+func (_e *MockLunoClient_Expecter) SetAuth(id interface{}, secret interface{}) *MockLunoClient_SetAuth_Call {
+	return &MockLunoClient_SetAuth_Call{Call: _e.mock.On("SetAuth", id, secret)}
+}
+
+func (_c *MockLunoClient_SetAuth_Call) Run(run func(id string, secret string)) *MockLunoClient_SetAuth_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_SetAuth_Call) Return(_a0 error) *MockLunoClient_SetAuth_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockLunoClient_SetAuth_Call) RunAndReturn(run func(string, string) error) *MockLunoClient_SetAuth_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetBaseURL provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) SetBaseURL(url string) {
+	_mock.Called(url)
+}
+
+// MockLunoClient_SetBaseURL_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetBaseURL'
+type MockLunoClient_SetBaseURL_Call struct {
+	*mock.Call
+}
+
+// SetBaseURL is a helper method to define mock.On call
+//   - url string
+func (_e *MockLunoClient_Expecter) SetBaseURL(url interface{}) *MockLunoClient_SetBaseURL_Call {
+	return &MockLunoClient_SetBaseURL_Call{Call: _e.mock.On("SetBaseURL", url)}
+}
+
+func (_c *MockLunoClient_SetBaseURL_Call) Run(run func(url string)) *MockLunoClient_SetBaseURL_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_SetBaseURL_Call) Return() *MockLunoClient_SetBaseURL_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MockLunoClient_SetBaseURL_Call) RunAndReturn(run func(string)) *MockLunoClient_SetBaseURL_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetDebug provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) SetDebug(debug bool) {
+	_mock.Called(debug)
+}
+
+// MockLunoClient_SetDebug_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetDebug'
+type MockLunoClient_SetDebug_Call struct {
+	*mock.Call
+}
+
+// SetDebug is a helper method to define mock.On call
+//   - debug bool
+func (_e *MockLunoClient_Expecter) SetDebug(debug interface{}) *MockLunoClient_SetDebug_Call {
+	return &MockLunoClient_SetDebug_Call{Call: _e.mock.On("SetDebug", debug)}
+}
+
+func (_c *MockLunoClient_SetDebug_Call) Run(run func(debug bool)) *MockLunoClient_SetDebug_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(bool))
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_SetDebug_Call) Return() *MockLunoClient_SetDebug_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MockLunoClient_SetDebug_Call) RunAndReturn(run func(bool)) *MockLunoClient_SetDebug_Call {
+	_c.Call.Return(run)
+	return _c
+}

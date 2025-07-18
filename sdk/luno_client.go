@@ -20,4 +20,11 @@ type LunoClient interface {
 	ListOrders(ctx context.Context, req *luno.ListOrdersRequest) (*luno.ListOrdersResponse, error)
 	ListTransactions(ctx context.Context, req *luno.ListTransactionsRequest) (*luno.ListTransactionsResponse, error)
 	ListTrades(ctx context.Context, req *luno.ListTradesRequest) (*luno.ListTradesResponse, error)
+	GetCandles(ctx context.Context, req *luno.GetCandlesRequest) (*luno.GetCandlesResponse, error)
+	GetTickers(ctx context.Context, req *luno.GetTickersRequest) (*luno.GetTickersResponse, error)
+	GetOrderBookFull(ctx context.Context, req *luno.GetOrderBookFullRequest) (*luno.GetOrderBookFullResponse, error)
+	Markets(ctx context.Context, req *luno.MarketsRequest) (*luno.MarketsResponse, error)
+	SetBaseURL(url string)
+	SetAuth(id, secret string) error
+	SetDebug(debug bool)
 }
