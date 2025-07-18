@@ -11,7 +11,7 @@
 
 A [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that provides access to the Luno cryptocurrency exchange API.
 
-This server enables integration with VS Code's Copilot and other MCP-compatible clients, providing contextual information and functionality related to the Luno cryptocurrency exchange.
+This server enables integration with Claude Code/VSCode/Cursor (and other MCP-compatible clients), providing contextual information and functionality related to the Luno cryptocurrency exchange.
 
 ## ⚠️ Beta Warning
 
@@ -30,13 +30,13 @@ We welcome feedback and bug reports to help improve the project. Please report a
 - **Resources**: Access to account balances, transaction history, and more
 - **Tools**: Functionality for creating and managing orders, checking prices, and viewing transaction details
 - **Security**: Secure authentication using Luno API keys
-- **VS Code Integration**: Easy integration with VS Code's Copilot features
+- **VS Code Integration**: Easy integration with VSCode, or other AI IDEs
 
 ## Usage
 
 ### Setting up credentials
 
-The server requires your Luno API key and secret. These can be obtained from your Luno account settings, see here for more info: [https://www.luno.com/developers](https://www.luno.com/developers).
+The server may require your Luno API key and secret for certain endpoints. These can be obtained from your Luno account settings, see here for more info: [https://www.luno.com/developers](https://www.luno.com/developers).
 
 ### Command-line options
 
@@ -47,26 +47,26 @@ The server requires your Luno API key and secret. These can be obtained from you
 
 ## Available Tools
 
-| Tool                | Category            | Description                                       |
-| ------------------- | ------------------- | ------------------------------------------------- |
-| `get_ticker`        | Market Data         | Get current ticker information for a trading pair |
-| `get_tickers`       | Market Data         | List tickers for given pairs (or all)               |
-| `get_order_book`    | Market Data         | Get the order book for a trading pair             |
-| `list_trades`       | Market Data         | List recent trades for a currency pair            |
-| `get_candles`       | Market Data         | Get candlestick market data for a currency pair   |
-| `get_markets_info`  | Market Data         | List all supported markets parameter information  |
-| `get_balances`      | Account Information | Get balances for all accounts                     |
-| `create_order`      | Trading             | Create a new buy or sell order                    |
-| `cancel_order`      | Trading             | Cancel an existing order                          |
-| `list_orders`       | Trading             | List open orders                                  |
-| `list_transactions` | Transactions        | List transactions for an account                  |
-| `get_transaction`   | Transactions        | Get details of a specific transaction             |
+| Tool                | Category            | Auth Required | Description                                       |
+| ------------------- | ------------------- | ------------- | ------------------------------------------------- |
+| `get_ticker`        | Market Data         | No            | Get current ticker information for a trading pair |
+| `get_tickers`       | Market Data         | No            | List tickers for given pairs (or all)             |
+| `get_order_book`    | Market Data         | No            | Get the order book for a trading pair             |
+| `list_trades`       | Market Data         | No            | List recent trades for a currency pair            |
+| `get_candles`       | Market Data         | No            | Get candlestick market data for a currency pair   |
+| `get_markets_info`  | Market Data         | No            | List all supported markets parameter information  |
+| `get_balances`      | Account Information | Yes           | Get balances for all accounts                     |
+| `create_order`      | Trading             | Yes           | Create a new buy or sell order                    |
+| `cancel_order`      | Trading             | Yes           | Cancel an existing order                          |
+| `list_orders`       | Trading             | Yes           | List open orders                                  |
+| `list_transactions` | Transactions        | Yes           | List transactions for an account                  |
+| `get_transaction`   | Transactions        | Yes           | Get details of a specific transaction             |
 
 ## Examples
 
 ### Working with wallets
 
-You can ask Copilot to show your wallet balances:
+You can ask your LLM to show your wallet balances:
 
 ```text
 What are my current wallet balances on Luno?
@@ -74,7 +74,7 @@ What are my current wallet balances on Luno?
 
 ### Trading
 
-You can ask Copilot to help you trade:
+You can ask your LLM to help you trade:
 
 ```text
 Create a limit order to buy 0.001 BTC at 50000 ZAR
@@ -82,7 +82,7 @@ Create a limit order to buy 0.001 BTC at 50000 ZAR
 
 ### Transaction history
 
-You can ask Copilot to show your transaction history:
+You can ask your LLM to show your transaction history:
 
 ```text
 Show me my recent Bitcoin transactions
@@ -90,7 +90,7 @@ Show me my recent Bitcoin transactions
 
 ### Market Data
 
-You can ask Copilot to show market data:
+You can ask your LLM to show market data:
 
 ```text
 Show me recent trades for XBTZAR
