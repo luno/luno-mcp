@@ -7,7 +7,7 @@ tool github.com/vektra/mockery/v3
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/luno/luno-go v0.0.35
-	github.com/mark3labs/mcp-go v0.34.0
+	github.com/mark3labs/mcp-go v0.35.0
 	github.com/stretchr/testify v1.10.0
 )
 
