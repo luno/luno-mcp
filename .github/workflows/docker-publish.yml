@@ -8,6 +8,11 @@ on:
     tags:
       - 'v*'
     paths:
+      - 'cmd/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Dockerfile'
       - '.github/workflows/docker-publish.yml'
 
 jobs:
