@@ -71,3 +71,5 @@ jobs:
           cache-to: ${{ steps.cache.outputs.cache_to }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
+          provenance: true
+          sbom: true
