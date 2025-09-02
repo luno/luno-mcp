@@ -13,18 +13,14 @@ jobs:
     permissions:
       contents: read
 
-    strategy:
-      matrix:
-        go-version: ["1.24", "1"]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go ${{ matrix.go-version }}
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: 'go.mod'
           cache: true
 
       - name: Install dependencies
