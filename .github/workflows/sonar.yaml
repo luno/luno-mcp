@@ -24,5 +24,5 @@ jobs:
       - name: Upload coverage reports to Sonar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && secrets.SONAR_TOKEN != '')
+        if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && env.SONAR_TOKEN != '')
         uses: SonarSource/sonarqube-scan-action@1a6d90ebcb0e6a6b1d87e37ba693fe453195ae25  # v5.3.1
