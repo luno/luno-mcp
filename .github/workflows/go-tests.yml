@@ -10,6 +10,7 @@ jobs:
   tests:
     name: Go Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     permissions:
       contents: read
 
