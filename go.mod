@@ -1,12 +1,12 @@
 module github.com/luno/luno-mcp
 
-go 1.24
+go 1.24.0
 
 tool github.com/vektra/mockery/v3
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/luno/luno-go v0.0.35
+	github.com/luno/luno-go v0.1.0
 	github.com/mark3labs/mcp-go v0.41.1
 	github.com/stretchr/testify v1.11.1
 )
@@ -56,7 +56,7 @@ require (
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/time v0.12.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
