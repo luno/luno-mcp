@@ -145,3 +145,48 @@ func TestServeSSEIntegration(t *testing.T) {
 		})
 	}
 }
+
+func TestServeStreamableHTTPIntegration(t *testing.T) {
+	tests := []struct {
+		name     string
+		address  string
+		errorMsg string
+	}{
+		{
+			name:     "invalid address format",
+			address:  "invalid:address",
+			errorMsg: "lookup tcp/address: unknown port",
+		},
+		{
+			name:     "invalid port",
+			address:  "localhost:99999",
+			errorMsg: "invalid port",
+		},
+		{
+			name:     "bind to used port",
+			address:  "localhost:80", // Typically requires root privileges
+			errorMsg: "bind: permission denied",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a proper MCP server for testing
+			lunoClient := luno.NewClient()
+			cfg := &config.Config{LunoClient: lunoClient}
+			server := NewMCPServer("test-streamable-http-server", "1.0.0", cfg)
+
+			// Set up context
+			ctx := context.Background()
+			// Test ServeStreamableHTTP functionality
+			err := ServeStreamableHTTP(ctx, server, tc.address)
+
+			if tc.errorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.errorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
