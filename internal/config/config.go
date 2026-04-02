@@ -12,10 +12,11 @@ import (
 
 const (
 	// Environment variables
-	EnvLunoAPIKeyID     = "LUNO_API_KEY_ID"
-	EnvLunoAPIKeySecret = "LUNO_API_SECRET"
-	EnvLunoAPIDomain    = "LUNO_API_DOMAIN"
-	EnvLunoAPIDebug     = "LUNO_API_DEBUG"
+	EnvLunoAPIKeyID          = "LUNO_API_KEY_ID"
+	EnvLunoAPIKeySecret      = "LUNO_API_SECRET"
+	EnvLunoAPIDomain         = "LUNO_API_DOMAIN"
+	EnvLunoAPIDebug          = "LUNO_API_DEBUG"
+	EnvAllowWriteOperations  = "ALLOW_WRITE_OPERATIONS"
 
 	// Default Luno API domain
 	DefaultLunoDomain = "api.luno.com"
@@ -28,6 +29,9 @@ type Config struct {
 	// IsAuthenticated indicates if the LunoClient is authenticated with API keys.
 	// If false, only public API calls can be made.
 	IsAuthenticated bool
+
+	// AllowWriteOperations controls whether write operations (create_order, cancel_order) are exposed
+	AllowWriteOperations bool
 }
 
 // Mask a string to show only the first 4 characters and replace the rest with asterisks
@@ -82,21 +86,26 @@ func Load(domainOverride string) (*Config, error) {
 		fmt.Println("Luno API credentials not found. Operating in unauthenticated mode.")
 	}
 
-	// Check if debug mode is enabled via environment variable
-	debugMode := false
-	if debugEnv := os.Getenv(strings.TrimSpace(EnvLunoAPIDebug)); debugEnv != "" {
-		// Enable debug mode if environment variable is set to "true", "1", or "yes"
-		debugMode = strings.ToLower(debugEnv) == "true" ||
-			debugEnv == "1" ||
-			strings.ToLower(debugEnv) == "yes"
-
-		if debugMode {
-			fmt.Println("Debug mode enabled via environment variable")
-		}
+	debugMode := parseBoolEnv(EnvLunoAPIDebug)
+	if debugMode {
+		fmt.Println("Debug mode enabled via environment variable")
 	}
-
 	cfg.LunoClient.SetDebug(debugMode)
+
+	allowWriteOps := parseBoolEnv(EnvAllowWriteOperations)
+	if allowWriteOps {
+		fmt.Println("Write operations enabled via environment variable")
+	}
+	cfg.AllowWriteOperations = allowWriteOps
 	return cfg, nil
+}
+
+// parseBoolEnv returns true if the environment variable is set to "true", "1", or "yes" (case-insensitive).
+func parseBoolEnv(key string) bool {
+	val := os.Getenv(strings.TrimSpace(key))
+	return strings.ToLower(val) == "true" ||
+		val == "1" ||
+		strings.ToLower(val) == "yes"
 }
 
 // FormatCurrency formats a decimal amount with the currency code

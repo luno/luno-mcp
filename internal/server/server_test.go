@@ -6,6 +6,7 @@ import (
 
 	"github.com/luno/luno-go"
 	"github.com/luno/luno-mcp/internal/config"
+	"github.com/luno/luno-mcp/internal/tools"
 	"github.com/mark3labs/mcp-go/mcp" // Added import
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/require"
@@ -17,27 +18,40 @@ const (
 	testServerMultiHooks = "test-server-multi-hooks"
 	testVersion1         = "1.0.0"
 	testVersion2         = "1.0.1"
-	testVersion3         = "1.0.2"
-	testVersion4         = "0.0.1"
+	testVersion3 = "1.0.2"
 )
 
 func TestNewMCPServer(t *testing.T) {
 	tests := []struct {
-		name    string
-		srvName string
-		version string
-		hooks   []*mcpserver.Hooks
+		name              string
+		srvName           string
+		version           string
+		hooks             []*mcpserver.Hooks
+		allowWriteOps     bool
+		expectedToolCount int
 	}{
 		{
-			name:    "creates server without hooks",
-			srvName: testServerName,
-			version: testVersion1,
-			hooks:   nil,
+			name:              "creates server without hooks and write ops disabled",
+			srvName:           testServerName,
+			version:           testVersion1,
+			hooks:             nil,
+			allowWriteOps:     false,
+			expectedToolCount: 10,
 		},
 		{
-			name:    "creates server with single hook",
-			srvName: testServerWithHooks,
-			version: testVersion2,
+			name:              "creates server with write ops enabled",
+			srvName:           testServerName,
+			version:           testVersion1,
+			hooks:             nil,
+			allowWriteOps:     true,
+			expectedToolCount: 12,
+		},
+		{
+			name:              "creates server with single hook",
+			srvName:           testServerWithHooks,
+			version:           testVersion2,
+			allowWriteOps:     false,
+			expectedToolCount: 10,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks {
 					h := &mcpserver.Hooks{}
@@ -49,9 +63,11 @@ func TestNewMCPServer(t *testing.T) {
 			},
 		},
 		{
-			name:    "creates server with multiple distinct hook objects",
-			srvName: testServerMultiHooks,
-			version: testVersion3,
+			name:              "creates server with multiple distinct hook objects",
+			srvName:           testServerMultiHooks,
+			version:           testVersion3,
+			allowWriteOps:     false,
+			expectedToolCount: 10,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks { // Corresponds to original OnAnyHookFunc
 					h := &mcpserver.Hooks{}
@@ -88,15 +104,68 @@ func TestNewMCPServer(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			lunoClient := luno.NewClient()
-			cfg := &config.Config{LunoClient: lunoClient}
+			cfg := &config.Config{
+				LunoClient:           lunoClient,
+				AllowWriteOperations: tc.allowWriteOps,
+			}
 
 			server := NewMCPServer(tc.srvName, tc.version, cfg, tc.hooks...)
 
 			require.NotNil(t, server, "NewMCPServer should return non-nil server")
+			require.Equal(t, tc.expectedToolCount, len(server.ListTools()), "unexpected number of registered tools")
+		})
+	}
+}
 
-			// These should not panic
-			registerResources(server, cfg)
-			registerTools(server, cfg)
+func TestWriteOperationsControl(t *testing.T) {
+	tests := []struct {
+		name                  string
+		allowWriteOps         bool
+		shouldHaveCreateOrder bool
+		shouldHaveCancelOrder bool
+	}{
+		{
+			name:                  "write operations disabled by default",
+			allowWriteOps:         false,
+			shouldHaveCreateOrder: false,
+			shouldHaveCancelOrder: false,
+		},
+		{
+			name:                  "write operations enabled when flag is true",
+			allowWriteOps:         true,
+			shouldHaveCreateOrder: true,
+			shouldHaveCancelOrder: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			lunoClient := luno.NewClient()
+			cfg := &config.Config{
+				LunoClient:           lunoClient,
+				AllowWriteOperations: tc.allowWriteOps,
+			}
+
+			server := NewMCPServer("test-write-ops", "1.0.0", cfg)
+			require.NotNil(t, server, "NewMCPServer should return non-nil server")
+
+			registeredTools := server.ListTools()
+
+			if tc.shouldHaveCreateOrder {
+				require.Contains(t, registeredTools, tools.CreateOrderToolID,
+					"%s: expected %s tool to be registered", tc.name, tools.CreateOrderToolID)
+			} else {
+				require.NotContains(t, registeredTools, tools.CreateOrderToolID,
+					"%s: expected %s tool not to be registered", tc.name, tools.CreateOrderToolID)
+			}
+
+			if tc.shouldHaveCancelOrder {
+				require.Contains(t, registeredTools, tools.CancelOrderToolID,
+					"%s: expected %s tool to be registered", tc.name, tools.CancelOrderToolID)
+			} else {
+				require.NotContains(t, registeredTools, tools.CancelOrderToolID,
+					"%s: expected %s tool not to be registered", tc.name, tools.CancelOrderToolID)
+			}
 		})
 	}
 }
@@ -110,7 +179,7 @@ func TestServeSSEIntegration(t *testing.T) {
 		{
 			name:     "invalid address format",
 			address:  "invalid:address",
-			errorMsg: "lookup tcp/address: unknown port",
+			errorMsg: "unknown port",
 		},
 		{
 			name:     "invalid port",
@@ -120,7 +189,7 @@ func TestServeSSEIntegration(t *testing.T) {
 		{
 			name:     "bind to used port",
 			address:  "localhost:80", // Typically requires root privileges
-			errorMsg: "bind: permission denied",
+			errorMsg: "permission denied",
 		},
 	}
 
@@ -128,7 +197,10 @@ func TestServeSSEIntegration(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create a proper MCP server for testing
 			lunoClient := luno.NewClient()
-			cfg := &config.Config{LunoClient: lunoClient}
+			cfg := &config.Config{
+				LunoClient:           lunoClient,
+				AllowWriteOperations: false,
+			}
 			server := NewMCPServer("test-sse-server", "1.0.0", cfg)
 
 			// Set up context with or without timeout

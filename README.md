@@ -44,23 +44,24 @@ The server may require your Luno API key and secret for certain endpoints. These
 - `--sse-address`: Address for SSE transport (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)
+- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also, configurable via `ALLOW_WRITE_OPERATIONS` env var
 
 ## Available Tools
 
-| Tool                | Category            | Auth Required | Description                                       |
-| ------------------- | ------------------- | ------------- | ------------------------------------------------- |
-| `get_ticker`        | Market Data         | No            | Get current ticker information for a trading pair |
-| `get_tickers`       | Market Data         | No            | List tickers for given pairs (or all)             |
-| `get_order_book`    | Market Data         | No            | Get the order book for a trading pair             |
-| `list_trades`       | Market Data         | No            | List recent trades for a currency pair            |
-| `get_candles`       | Market Data         | No            | Get candlestick market data for a currency pair   |
-| `get_markets_info`  | Market Data         | No            | List all supported markets parameter information  |
-| `get_balances`      | Account Information | Yes           | Get balances for all accounts                     |
-| `create_order`      | Trading             | Yes           | Create a new buy or sell order                    |
-| `cancel_order`      | Trading             | Yes           | Cancel an existing order                          |
-| `list_orders`       | Trading             | Yes           | List open orders                                  |
-| `list_transactions` | Transactions        | Yes           | List transactions for an account                  |
-| `get_transaction`   | Transactions        | Yes           | Get details of a specific transaction             |
+| Tool                | Category            | Description                                       | Auth | Write |
+| ------------------- | ------------------- | ------------------------------------------------- | ---- | ----- |
+| `get_ticker`        | Market Data         | Get current ticker information for a trading pair | ❌   | ❌    |
+| `get_tickers`       | Market Data         | List tickers for given pairs (or all)             | ❌   | ❌    |
+| `get_order_book`    | Market Data         | Get the order book for a trading pair             | ❌   | ❌    |
+| `list_trades`       | Market Data         | List recent trades for a currency pair            | ❌   | ❌    |
+| `get_candles`       | Market Data         | Get candlestick market data for a currency pair   | ❌   | ❌    |
+| `get_markets_info`  | Market Data         | List all supported markets parameter information  | ❌   | ❌    |
+| `get_balances`      | Account Information | Get balances for all accounts                     | ✅   | ❌    |
+| `create_order`      | Trading             | Create a new buy or sell order                    | ✅   | ✅    |
+| `cancel_order`      | Trading             | Cancel an existing order                          | ✅   | ✅    |
+| `list_orders`       | Trading             | List open orders                                  | ✅   | ❌    |
+| `list_transactions` | Transactions        | List transactions for an account                  | ✅   | ❌    |
+| `get_transaction`   | Transactions        | Get details of a specific transaction             | ✅   | ❌    |
 
 ## Examples
 
@@ -121,6 +122,8 @@ This configuration will make VS Code run the Docker container. Ensure Docker is 
         // "-e", "LUNO_API_DEBUG=true",
         // Optional: Override default API domain
         // "-e", "LUNO_API_DOMAIN=api.staging.luno.com",
+        // Optional: Enable write operations (create_order, cancel_order) - disabled by default
+        // "-e", "ALLOW_WRITE_OPERATIONS=true",
         "ghcr.io/luno/luno-mcp:latest"
       ],
       "inputs": [
@@ -149,6 +152,7 @@ This configuration will make VS Code run the Docker container. Ensure Docker is 
       "env": {
         "LUNO_API_KEY_ID": "${input:luno_api_key_id}",
         "LUNO_API_SECRET": "${input:luno_api_secret}"
+        // Optional: "ALLOW_WRITE_OPERATIONS": "true"
       },
       "inputs": [
         {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
@@ -206,12 +210,17 @@ This configuration will make VS Code run the Docker container. Ensure Docker is 
 
 This tool requires API credentials that have access to your Luno account. Be cautious when using API keys, especially ones with withdrawal permissions. It's recommended to create API keys with only the permissions needed for your specific use case.
 
+### Write Operations Control
+
+By default, the MCP server runs in **read-only mode** — `create_order` and `cancel_order` are not exposed. To enable them, set `ALLOW_WRITE_OPERATIONS` to `true`, `1`, or `yes`. See the config examples above for where to add this flag.
+
 ### Best Practices for API Credentials
 
 1. **Create Limited-Permission API Keys**: Only grant the permissions absolutely necessary for your use case
 2. **Never Commit Credentials to Version Control**: Ensure `.env` files are always in your `.gitignore`
 3. **Rotate API Keys Regularly**: Periodically regenerate your API keys to limit the impact of potential leaks
 4. **Monitor API Usage**: Regularly check your Luno account for any unauthorized activity
+5. **Use Read-Only Mode by Default**: Only enable write operations when specifically needed
 
 ### Contributing
 

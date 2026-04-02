@@ -88,40 +88,55 @@ func TestParseFlags(t *testing.T) {
 			name: "default flags",
 			args: []string{},
 			expected: CliFlags{
-				TransportType: testTransportStdio,
-				SSEAddr:       testDefaultSSEAddr,
-				LunoDomain:    "",
-				LogLevel:      testLogLevelInfo,
+				TransportType:        testTransportStdio,
+				SSEAddr:              testDefaultSSEAddr,
+				LunoDomain:           "",
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: false,
 			},
 		},
 		{
 			name: "custom stdio flags",
 			args: []string{"-transport=stdio", "-log-level=debug"},
 			expected: CliFlags{
-				TransportType: testTransportStdio,
-				SSEAddr:       testDefaultSSEAddr,
-				LunoDomain:    "",
-				LogLevel:      testLogLevelDebug,
+				TransportType:        testTransportStdio,
+				SSEAddr:              testDefaultSSEAddr,
+				LunoDomain:           "",
+				LogLevel:             testLogLevelDebug,
+				AllowWriteOperations: false,
 			},
 		},
 		{
 			name: "sse transport with custom address",
 			args: []string{"-transport=sse", "-sse-address=" + testCustomSSEAddr, "-domain=" + testStagingDomain},
 			expected: CliFlags{
-				TransportType: testTransportSSE,
-				SSEAddr:       testCustomSSEAddr,
-				LunoDomain:    testStagingDomain,
-				LogLevel:      testLogLevelInfo,
+				TransportType:        testTransportSSE,
+				SSEAddr:              testCustomSSEAddr,
+				LunoDomain:           testStagingDomain,
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: false,
 			},
 		},
 		{
 			name: "all custom flags",
 			args: []string{"-transport=sse", "-sse-address=" + testCustomSSEAddrAlt, "-domain=" + testCustomDomain, "-log-level=error"},
 			expected: CliFlags{
-				TransportType: testTransportSSE,
-				SSEAddr:       testCustomSSEAddrAlt,
-				LunoDomain:    testCustomDomain,
-				LogLevel:      testLogLevelError,
+				TransportType:        testTransportSSE,
+				SSEAddr:              testCustomSSEAddrAlt,
+				LunoDomain:           testCustomDomain,
+				LogLevel:             testLogLevelError,
+				AllowWriteOperations: false,
+			},
+		},
+		{
+			name: "allow write operations flag",
+			args: []string{"-allow-write-operations=true"},
+			expected: CliFlags{
+				TransportType:        testTransportStdio,
+				SSEAddr:              testDefaultSSEAddr,
+				LunoDomain:           "",
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: true,
 			},
 		},
 	}
@@ -180,16 +195,9 @@ func TestLoadEnvFile(t *testing.T) {
 			originalWd, _ := os.Getwd()
 			defer func() { _ = os.Chdir(originalWd) }()
 
-			// Setup files
+			// Setup files in tempDir (parent of any subdirectory we'll chdir into)
 			for relativeFilePath, content := range tt.setupFiles {
-				var fullPath string
-				if tt.workingDir != "" {
-					// If we have a working directory, put the file in the parent (tempDir)
-					fullPath = filepath.Join(tempDir, relativeFilePath)
-				} else {
-					// Put the file in the current directory we'll change to
-					fullPath = filepath.Join(tempDir, relativeFilePath)
-				}
+				fullPath := filepath.Join(tempDir, relativeFilePath)
 
 				err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
 				require.NoError(t, err)
@@ -297,31 +305,35 @@ func TestCliFlags(t *testing.T) {
 		{
 			name: "default values",
 			flags: CliFlags{
-				TransportType: testTransportStdio,
-				SSEAddr:       testDefaultSSEAddr,
-				LunoDomain:    "",
-				LogLevel:      testLogLevelInfo,
+				TransportType:        testTransportStdio,
+				SSEAddr:              testDefaultSSEAddr,
+				LunoDomain:           "",
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: false,
 			},
 			expected: CliFlags{
-				TransportType: testTransportStdio,
-				SSEAddr:       testDefaultSSEAddr,
-				LunoDomain:    "",
-				LogLevel:      testLogLevelInfo,
+				TransportType:        testTransportStdio,
+				SSEAddr:              testDefaultSSEAddr,
+				LunoDomain:           "",
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: false,
 			},
 		},
 		{
-			name: "custom values",
+			name: "custom values with write ops enabled",
 			flags: CliFlags{
-				TransportType: testTransportSSE,
-				SSEAddr:       testCustomSSEAddr,
-				LunoDomain:    testStagingDomain,
-				LogLevel:      testLogLevelDebug,
+				TransportType:        testTransportSSE,
+				SSEAddr:              testCustomSSEAddr,
+				LunoDomain:           testStagingDomain,
+				LogLevel:             testLogLevelDebug,
+				AllowWriteOperations: true,
 			},
 			expected: CliFlags{
-				TransportType: testTransportSSE,
-				SSEAddr:       testCustomSSEAddr,
-				LunoDomain:    testStagingDomain,
-				LogLevel:      testLogLevelDebug,
+				TransportType:        testTransportSSE,
+				SSEAddr:              testCustomSSEAddr,
+				LunoDomain:           testStagingDomain,
+				LogLevel:             testLogLevelDebug,
+				AllowWriteOperations: true,
 			},
 		},
 	}
@@ -476,10 +488,11 @@ func TestStartServer(t *testing.T) {
 		{
 			name: "invalid transport type",
 			flags: CliFlags{
-				TransportType: "invalid",
-				SSEAddr:       testDefaultSSEAddr,
-				LunoDomain:    "",
-				LogLevel:      testLogLevelInfo,
+				TransportType:        "invalid",
+				SSEAddr:              testDefaultSSEAddr,
+				LunoDomain:           "",
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: false,
 			},
 			expectError:   true,
 			errorContains: "invalid transport type",
@@ -487,10 +500,11 @@ func TestStartServer(t *testing.T) {
 		{
 			name: "sse transport with invalid address",
 			flags: CliFlags{
-				TransportType: testTransportSSE,
-				SSEAddr:       "invalid:99999",
-				LunoDomain:    "",
-				LogLevel:      testLogLevelInfo,
+				TransportType:        testTransportSSE,
+				SSEAddr:              "invalid:99999",
+				LunoDomain:           "",
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: false,
 			},
 			expectError:   true,
 			errorContains: "invalid port",

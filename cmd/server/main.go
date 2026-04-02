@@ -24,10 +24,11 @@ const (
 
 // CliFlags holds command line flag values
 type CliFlags struct {
-	TransportType string
-	SSEAddr       string
-	LunoDomain    string
-	LogLevel      string
+	TransportType        string
+	SSEAddr              string
+	LunoDomain           string
+	LogLevel             string
+	AllowWriteOperations bool
 }
 
 // loadEnvFile attempts to load environment variables from various .env file locations
@@ -60,13 +61,15 @@ func parseFlags() CliFlags {
 	sseAddr := flag.String("sse-address", "localhost:8080", "Address for SSE transport")
 	lunoDomain := flag.String("domain", "", "Luno API domain (default: api.luno.com)")
 	logLevel := flag.String("log-level", "info", "Log level (debug, info, warn, error)")
+	allowWriteOps := flag.Bool("allow-write-operations", false, "Enable write operations (create_order, cancel_order). Also settable via ALLOW_WRITE_OPERATIONS env var")
 	flag.Parse()
 
 	return CliFlags{
-		TransportType: *transportType,
-		SSEAddr:       *sseAddr,
-		LunoDomain:    *lunoDomain,
-		LogLevel:      *logLevel,
+		TransportType:        *transportType,
+		SSEAddr:              *sseAddr,
+		LunoDomain:           *lunoDomain,
+		LogLevel:             *logLevel,
+		AllowWriteOperations: *allowWriteOps,
 	}
 }
 
@@ -136,6 +139,11 @@ func main() {
 	cfg, err := config.Load(flags.LunoDomain)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// CLI flag takes precedence for enabling write operations
+	if flags.AllowWriteOperations {
+		cfg.AllowWriteOperations = true
 	}
 
 	// Create MCP server with logging hooks
