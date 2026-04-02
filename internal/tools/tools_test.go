@@ -191,6 +191,18 @@ func TestToolCreation(t *testing.T) {
 	}
 }
 
+func TestHandleWriteOperationDisabled(t *testing.T) {
+	handler := HandleWriteOperationDisabled()
+
+	result, err := handler(context.Background(), mcp.CallToolRequest{})
+	assert.NoError(t, err)
+	assert.True(t, result.IsError, "result should be an error")
+
+	text := getTextContentFromResult(t, result)
+	assert.Contains(t, text, "--allow-write-operations")
+	assert.Contains(t, text, "ALLOW_WRITE_OPERATIONS")
+}
+
 // Helper function to extract text content from mcp.CallToolResult
 func getTextContentFromResult(t *testing.T, result *mcp.CallToolResult) string {
 	if result == nil || len(result.Content) == 0 {

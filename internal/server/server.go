@@ -70,16 +70,19 @@ func registerTools(server *mcpserver.MCPServer, cfg *config.Config) {
 	server.AddTool(orderBookTool, tools.HandleGetOrderBook(cfg))
 
 	// Add trading tools
-	// Only add write operation tools if explicitly allowed
+	// Write operation tools are always registered so clients know they exist.
+	// When disabled, their handlers return an informative error explaining how to enable them.
+	createOrderTool := tools.NewCreateOrderTool()
+	cancelOrderTool := tools.NewCancelOrderTool()
+
 	if cfg.AllowWriteOperations {
 		slog.Info("Write operations enabled - registering create_order and cancel_order tools")
-		createOrderTool := tools.NewCreateOrderTool()
 		server.AddTool(createOrderTool, tools.HandleCreateOrder(cfg))
-
-		cancelOrderTool := tools.NewCancelOrderTool()
 		server.AddTool(cancelOrderTool, tools.HandleCancelOrder(cfg))
 	} else {
-		slog.Info("Write operations disabled - create_order and cancel_order tools will not be available")
+		slog.Info("Write operations disabled - create_order and cancel_order tools registered as disabled")
+		server.AddTool(createOrderTool, tools.HandleWriteOperationDisabled())
+		server.AddTool(cancelOrderTool, tools.HandleWriteOperationDisabled())
 	}
 
 	listOrdersTool := tools.NewListOrdersTool()

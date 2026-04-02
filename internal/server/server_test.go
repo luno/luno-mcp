@@ -36,7 +36,7 @@ func TestNewMCPServer(t *testing.T) {
 			version:           testVersion1,
 			hooks:             nil,
 			allowWriteOps:     false,
-			expectedToolCount: 10,
+			expectedToolCount: 12,
 		},
 		{
 			name:              "creates server with write ops enabled",
@@ -51,7 +51,7 @@ func TestNewMCPServer(t *testing.T) {
 			srvName:           testServerWithHooks,
 			version:           testVersion2,
 			allowWriteOps:     false,
-			expectedToolCount: 10,
+			expectedToolCount: 12,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks {
 					h := &mcpserver.Hooks{}
@@ -67,7 +67,7 @@ func TestNewMCPServer(t *testing.T) {
 			srvName:           testServerMultiHooks,
 			version:           testVersion3,
 			allowWriteOps:     false,
-			expectedToolCount: 10,
+			expectedToolCount: 12,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks { // Corresponds to original OnAnyHookFunc
 					h := &mcpserver.Hooks{}
@@ -119,22 +119,16 @@ func TestNewMCPServer(t *testing.T) {
 
 func TestWriteOperationsControl(t *testing.T) {
 	tests := []struct {
-		name                  string
-		allowWriteOps         bool
-		shouldHaveCreateOrder bool
-		shouldHaveCancelOrder bool
+		name          string
+		allowWriteOps bool
 	}{
 		{
-			name:                  "write operations disabled by default",
-			allowWriteOps:         false,
-			shouldHaveCreateOrder: false,
-			shouldHaveCancelOrder: false,
+			name:          "write operations disabled by default",
+			allowWriteOps: false,
 		},
 		{
-			name:                  "write operations enabled when flag is true",
-			allowWriteOps:         true,
-			shouldHaveCreateOrder: true,
-			shouldHaveCancelOrder: true,
+			name:          "write operations enabled when flag is true",
+			allowWriteOps: true,
 		},
 	}
 
@@ -149,23 +143,12 @@ func TestWriteOperationsControl(t *testing.T) {
 			server := NewMCPServer("test-write-ops", "1.0.0", cfg)
 			require.NotNil(t, server, "NewMCPServer should return non-nil server")
 
+			// Write operation tools should always be registered regardless of the flag
 			registeredTools := server.ListTools()
-
-			if tc.shouldHaveCreateOrder {
-				require.Contains(t, registeredTools, tools.CreateOrderToolID,
-					"%s: expected %s tool to be registered", tc.name, tools.CreateOrderToolID)
-			} else {
-				require.NotContains(t, registeredTools, tools.CreateOrderToolID,
-					"%s: expected %s tool not to be registered", tc.name, tools.CreateOrderToolID)
-			}
-
-			if tc.shouldHaveCancelOrder {
-				require.Contains(t, registeredTools, tools.CancelOrderToolID,
-					"%s: expected %s tool to be registered", tc.name, tools.CancelOrderToolID)
-			} else {
-				require.NotContains(t, registeredTools, tools.CancelOrderToolID,
-					"%s: expected %s tool not to be registered", tc.name, tools.CancelOrderToolID)
-			}
+			require.Contains(t, registeredTools, tools.CreateOrderToolID,
+				"%s: expected %s tool to always be registered", tc.name, tools.CreateOrderToolID)
+			require.Contains(t, registeredTools, tools.CancelOrderToolID,
+				"%s: expected %s tool to always be registered", tc.name, tools.CancelOrderToolID)
 		})
 	}
 }
