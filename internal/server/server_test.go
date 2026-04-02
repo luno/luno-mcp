@@ -2,12 +2,14 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/luno/luno-go"
 	"github.com/luno/luno-mcp/internal/config"
 	"github.com/luno/luno-mcp/internal/tools"
-	"github.com/mark3labs/mcp-go/mcp" // Added import
+	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/require"
 )
@@ -140,17 +142,51 @@ func TestWriteOperationsControl(t *testing.T) {
 				AllowWriteOperations: tc.allowWriteOps,
 			}
 
-			server := NewMCPServer("test-write-ops", "1.0.0", cfg)
-			require.NotNil(t, server, "NewMCPServer should return non-nil server")
+			srv := NewMCPServer("test-write-ops", "1.0.0", cfg)
+			require.NotNil(t, srv, "NewMCPServer should return non-nil server")
 
 			// Write operation tools should always be registered regardless of the flag
-			registeredTools := server.ListTools()
+			registeredTools := srv.ListTools()
 			require.Contains(t, registeredTools, tools.CreateOrderToolID,
 				"%s: expected %s tool to always be registered", tc.name, tools.CreateOrderToolID)
 			require.Contains(t, registeredTools, tools.CancelOrderToolID,
 				"%s: expected %s tool to always be registered", tc.name, tools.CancelOrderToolID)
+
+			// When disabled, verify the server routes calls to the disabled handler
+			if !tc.allowWriteOps {
+				for _, toolID := range []string{tools.CreateOrderToolID, tools.CancelOrderToolID} {
+					resp := callTool(t, srv, toolID)
+					require.Contains(t, resp, tools.ErrWriteOperationDisabled,
+						"%s: calling %s should return disabled error", tc.name, toolID)
+				}
+			}
 		})
 	}
+}
+
+// callTool invokes a tool through the MCP server's HandleMessage entry point
+// and returns the text content from the response.
+func callTool(t *testing.T, srv *mcpserver.MCPServer, toolID string) string {
+	t.Helper()
+
+	msg := fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":%q,"arguments":{}}}`, toolID)
+	result := srv.HandleMessage(context.Background(), json.RawMessage(msg))
+
+	b, err := json.Marshal(result)
+	require.NoError(t, err)
+
+	var parsed struct {
+		Result struct {
+			Content []struct {
+				Text string `json:"text"`
+			} `json:"content"`
+			IsError bool `json:"isError"`
+		} `json:"result"`
+	}
+	require.NoError(t, json.Unmarshal(b, &parsed))
+	require.True(t, parsed.Result.IsError, "expected tool call to return an error result")
+	require.NotEmpty(t, parsed.Result.Content, "expected at least one content item")
+	return parsed.Result.Content[0].Text
 }
 
 func TestServeSSEIntegration(t *testing.T) {

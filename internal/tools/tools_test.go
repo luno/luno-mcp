@@ -192,15 +192,30 @@ func TestToolCreation(t *testing.T) {
 }
 
 func TestHandleWriteOperationDisabled(t *testing.T) {
-	handler := HandleWriteOperationDisabled()
+	tests := []struct {
+		name               string
+		expectedSubstrings []string
+	}{
+		{
+			name:               "returns error with CLI flag and env var instructions",
+			expectedSubstrings: []string{"--allow-write-operations", "ALLOW_WRITE_OPERATIONS"},
+		},
+	}
 
-	result, err := handler(context.Background(), mcp.CallToolRequest{})
-	assert.NoError(t, err)
-	assert.True(t, result.IsError, "result should be an error")
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			handler := HandleWriteOperationDisabled()
 
-	text := getTextContentFromResult(t, result)
-	assert.Contains(t, text, "--allow-write-operations")
-	assert.Contains(t, text, "ALLOW_WRITE_OPERATIONS")
+			result, err := handler(context.Background(), mcp.CallToolRequest{})
+			assert.NoError(t, err)
+			assert.True(t, result.IsError, "result should be an error")
+
+			text := getTextContentFromResult(t, result)
+			for _, substring := range tc.expectedSubstrings {
+				assert.Contains(t, text, substring)
+			}
+		})
+	}
 }
 
 // Helper function to extract text content from mcp.CallToolResult
