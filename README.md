@@ -50,18 +50,18 @@ The server may require your Luno API key and secret for certain endpoints. These
 
 | Tool                | Category            | Auth Required | Description                                       | Write Operations Required |
 | ------------------- | ------------------- | ------------- | ------------------------------------------------- | ------------------------- |
-| `get_ticker`        | Market Data         | No            | Get current ticker information for a trading pair | ❌                        |
-| `get_tickers`       | Market Data         | No            | List tickers for given pairs (or all)             | ❌                        |
-| `get_order_book`    | Market Data         | No            | Get the order book for a trading pair             | ❌                        |
-| `list_trades`       | Market Data         | No            | List recent trades for a currency pair            | ❌                        |
-| `get_candles`       | Market Data         | No            | Get candlestick market data for a currency pair   | ❌                        |
-| `get_markets_info`  | Market Data         | No            | List all supported markets parameter information  | ❌                        |
-| `get_balances`      | Account Information | Yes           | Get balances for all accounts                     | ❌                        |
-| `create_order`      | Trading             | Yes           | Create a new buy or sell order                    | ✅                        |
-| `cancel_order`      | Trading             | Yes           | Cancel an existing order                          | ✅                        |
-| `list_orders`       | Trading             | Yes           | List open orders                                  | ❌                        |
-| `list_transactions` | Transactions        | Yes           | List transactions for an account                  | ❌                        |
-| `get_transaction`   | Transactions        | Yes           | Get details of a specific transaction             | ❌                        |
+| `get_ticker`        | Market Data         | ❌            | Get current ticker information for a trading pair | ❌                        |
+| `get_tickers`       | Market Data         | ❌            | List tickers for given pairs (or all)             | ❌                        |
+| `get_order_book`    | Market Data         | ❌            | Get the order book for a trading pair             | ❌                        |
+| `list_trades`       | Market Data         | ❌            | List recent trades for a currency pair            | ❌                        |
+| `get_candles`       | Market Data         | ❌            | Get candlestick market data for a currency pair   | ❌                        |
+| `get_markets_info`  | Market Data         | ❌            | List all supported markets parameter information  | ❌                        |
+| `get_balances`      | Account Information | ✅            | Get balances for all accounts                     | ❌                        |
+| `create_order`      | Trading             | ✅            | Create a new buy or sell order                    | ✅                        |
+| `cancel_order`      | Trading             | ✅            | Cancel an existing order                          | ✅                        |
+| `list_orders`       | Trading             | ✅            | List open orders                                  | ❌                        |
+| `list_transactions` | Transactions        | ✅            | List transactions for an account                  | ❌                        |
+| `get_transaction`   | Transactions        | ✅            | Get details of a specific transaction             | ❌                        |
 
 ## Examples
 
