@@ -1,4 +1,4 @@
-.PHONY: build test clean run-stdio run-sse
+.PHONY: build test clean run-stdio run-sse run-streamable-http
 
 # Binary name
 BINARY_NAME=luno-mcp
@@ -23,6 +23,10 @@ run-stdio:
 # Run in SSE mode
 run-sse:
 	go run ./cmd/server --transport sse --sse-address localhost:8080
+
+# Run in Streamable HTTP mode
+run-streamable-http:
+	go run ./cmd/server --transport streamable-http --sse-address localhost:8080
 
 # Install the binary to your GOBIN path
 install:

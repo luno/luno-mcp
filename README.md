@@ -196,6 +196,183 @@ Optional environment variables:
 
 </details>
 
+**Standard config** (Docker) works with most MCP clients:
+
+```json
+{
+  "mcpServers": {
+    "luno": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "LUNO_API_KEY_ID=YOUR_API_KEY_ID",
+        "-e", "LUNO_API_SECRET=YOUR_API_SECRET",
+        "ghcr.io/luno/luno-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+<details>
+<summary>Claude Code</summary>
+
+Using Docker:
+
+```bash
+claude mcp add luno -- docker run --rm -i -e LUNO_API_KEY_ID=YOUR_API_KEY_ID -e LUNO_API_SECRET=YOUR_API_SECRET ghcr.io/luno/luno-mcp:latest
+```
+
+Or if you've built from source:
+
+```bash
+claude mcp add luno -e LUNO_API_KEY_ID=YOUR_API_KEY_ID -e LUNO_API_SECRET=YOUR_API_SECRET -- luno-mcp
+```
+
+</details>
+
+<details>
+<summary>Claude Desktop</summary>
+
+Add to your `claude_desktop_config.json` ([setup guide](https://modelcontextprotocol.io/quickstart/user)) using the standard config above.
+
+</details>
+
+<details>
+<summary>Cursor</summary>
+
+Go to `Cursor Settings` → `MCP` → `Add new MCP Server`. Use `command` type with command `docker` and the args from the standard config above.
+
+Or add the standard config to your `.cursor/mcp.json`.
+
+</details>
+
+<details>
+<summary>Windsurf</summary>
+
+Follow the Windsurf MCP [documentation](https://docs.windsurf.com/windsurf/cascade/mcp). Use the standard config above.
+
+</details>
+
+<details>
+<summary>VS Code (manual configuration)</summary>
+
+Click the badge above for one-click Docker install, or add the following to your VS Code `settings.json` or `.vscode/mcp.json`:
+
+#### With Docker
+
+```json
+{
+  "servers": {
+    "luno": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "LUNO_API_KEY_ID=${input:luno_api_key_id}",
+        "-e", "LUNO_API_SECRET=${input:luno_api_secret}",
+        "ghcr.io/luno/luno-mcp:latest"
+      ],
+      "inputs": [
+         {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+         {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+      ]
+    }
+  }
+}
+```
+
+#### From source
+
+```json
+{
+  "servers": {
+    "luno": {
+      "command": "luno-mcp",
+      "env": {
+        "LUNO_API_KEY_ID": "${input:luno_api_key_id}",
+        "LUNO_API_SECRET": "${input:luno_api_secret}"
+      },
+      "inputs": [
+        {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+        {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+      ]
+    }
+  }
+}
+```
+
+#### SSE transport
+
+```json
+{
+  "servers": {
+    "luno": {
+      "type": "sse",
+      "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Building from source</summary>
+
+Requires Go 1.25 or later.
+
+Install directly:
+
+```bash
+go install github.com/luno/luno-mcp/cmd/server@latest
+```
+
+Or clone and build:
+
+```bash
+git clone https://github.com/luno/luno-mcp
+cd luno-mcp
+go build -o luno-mcp ./cmd/server
+```
+
+Optionally make it available system-wide:
+
+```bash
+sudo mv luno-mcp /usr/local/bin/
+```
+
+</details>
+
+<details>
+<summary>Docker</summary>
+
+Use the standard config above, or run directly:
+
+```bash
+docker run --rm -i \
+  -e LUNO_API_KEY_ID=YOUR_API_KEY_ID \
+  -e LUNO_API_SECRET=YOUR_API_SECRET \
+  ghcr.io/luno/luno-mcp:latest
+```
+
+For SSE mode:
+
+```bash
+docker run --rm \
+  -e LUNO_API_KEY_ID=YOUR_API_KEY_ID \
+  -e LUNO_API_SECRET=YOUR_API_SECRET \
+  -p 8080:8080 \
+  ghcr.io/luno/luno-mcp:latest \
+  --transport sse --sse-address 0.0.0.0:8080
+```
+
+Optional environment variables:
+- `LUNO_API_DEBUG=true` — Enable debug logging
+- `LUNO_API_DOMAIN=api.staging.luno.com` — Override API domain
+- `ALLOW_WRITE_OPERATIONS=true` — Enable write operations (`create_order`, `cancel_order`)
+
+</details>
+
 ## Features
 
 - **Resources**: Access to account balances, transaction history, and more
@@ -222,11 +399,11 @@ Optional environment variables:
 
 ## Command-line options
 
-- `--transport`: Transport type (`stdio` or `sse`, default: `stdio`)
-- `--sse-address`: Address for SSE transport (default: `localhost:8080`)
+- `--transport`: Transport type (`stdio`, `sse`, or `streamable-http`; default: `streamable-http`)
+- `--sse-address`: Address for SSE and Streamable HTTP transports (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)
-- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also, configurable via `ALLOW_WRITE_OPERATIONS` env var
+- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also configurable via `ALLOW_WRITE_OPERATIONS` env var
 
 ## Examples
 

@@ -190,6 +190,16 @@ func callTool(t *testing.T, srv *mcpserver.MCPServer, toolID string) string {
 }
 
 func TestServeSSEIntegration(t *testing.T) {
+	testServeHTTPTransport(t, "test-sse-server", ServeSSE)
+}
+
+func TestServeStreamableHTTPIntegration(t *testing.T) {
+	testServeHTTPTransport(t, "test-streamable-http-server", ServeStreamableHTTP)
+}
+
+func testServeHTTPTransport(t *testing.T, serverName string, serve func(context.Context, *mcpserver.MCPServer, string) error) {
+	t.Helper()
+
 	tests := []struct {
 		name     string
 		address  string
@@ -207,25 +217,22 @@ func TestServeSSEIntegration(t *testing.T) {
 		},
 		{
 			name:     "bind to used port",
-			address:  "localhost:80", // Typically requires root privileges
+			address:  "localhost:80",
 			errorMsg: "permission denied",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create a proper MCP server for testing
 			lunoClient := luno.NewClient()
 			cfg := &config.Config{
 				LunoClient:           lunoClient,
 				AllowWriteOperations: false,
 			}
-			server := NewMCPServer("test-sse-server", "1.0.0", cfg)
+			srv := NewMCPServer(serverName, "1.0.0", cfg)
 
-			// Set up context with or without timeout
 			ctx := context.Background()
-			// Test ServeSSE functionality
-			err := ServeSSE(ctx, server, tc.address)
+			err := serve(ctx, srv, tc.address)
 
 			if tc.errorMsg != "" {
 				require.Error(t, err)

@@ -23,8 +23,9 @@ const (
 	testLogLevelInfo     = "info"
 	testLogLevelDebug    = "debug"
 	testLogLevelError    = "error"
-	testTransportStdio   = "stdio"
-	testTransportSSE     = "sse"
+	testTransportStdio          = "stdio"
+	testTransportSSE            = "sse"
+	testTransportStreamableHTTP = "streamable-http"
 )
 
 func TestParseLogLevel(t *testing.T) {
@@ -88,7 +89,7 @@ func TestParseFlags(t *testing.T) {
 			name: "default flags",
 			args: []string{},
 			expected: CliFlags{
-				TransportType:        testTransportStdio,
+				TransportType:        testTransportStreamableHTTP,
 				SSEAddr:              testDefaultSSEAddr,
 				LunoDomain:           "",
 				LogLevel:             testLogLevelInfo,
@@ -132,7 +133,7 @@ func TestParseFlags(t *testing.T) {
 			name: "allow write operations flag",
 			args: []string{"-allow-write-operations=true"},
 			expected: CliFlags{
-				TransportType:        testTransportStdio,
+				TransportType:        testTransportStreamableHTTP,
 				SSEAddr:              testDefaultSSEAddr,
 				LunoDomain:           "",
 				LogLevel:             testLogLevelInfo,
@@ -378,7 +379,7 @@ func TestMainFunctionFlow(t *testing.T) {
 		os.Args = []string{"cmd"}
 
 		flags := parseFlags()
-		assert.Equal(t, testTransportStdio, flags.TransportType)
+		assert.Equal(t, testTransportStreamableHTTP, flags.TransportType)
 		assert.Equal(t, testDefaultSSEAddr, flags.SSEAddr)
 		assert.Equal(t, "", flags.LunoDomain)
 		assert.Equal(t, testLogLevelInfo, flags.LogLevel)
@@ -501,6 +502,18 @@ func TestStartServer(t *testing.T) {
 			name: "sse transport with invalid address",
 			flags: CliFlags{
 				TransportType:        testTransportSSE,
+				SSEAddr:              "invalid:99999",
+				LunoDomain:           "",
+				LogLevel:             testLogLevelInfo,
+				AllowWriteOperations: false,
+			},
+			expectError:   true,
+			errorContains: "invalid port",
+		},
+		{
+			name: "streamable http transport with invalid address",
+			flags: CliFlags{
+				TransportType:        testTransportStreamableHTTP,
 				SSEAddr:              "invalid:99999",
 				LunoDomain:           "",
 				LogLevel:             testLogLevelInfo,

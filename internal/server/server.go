@@ -132,7 +132,35 @@ func ServeStdio(ctx context.Context, s *mcpserver.MCPServer) error {
 func ServeSSE(ctx context.Context, s *mcpserver.MCPServer, addr string) error {
 	sseServer := mcpserver.NewSSEServer(s)
 
-	// Start the server
 	slog.Info("SSE server listening on " + addr)
-	return sseServer.Start(addr)
+	return serveHTTP(ctx, sseServer, addr)
+}
+
+// ServeStreamableHTTP starts the server using the Streamable HTTP transport
+func ServeStreamableHTTP(ctx context.Context, s *mcpserver.MCPServer, addr string) error {
+	httpServer := mcpserver.NewStreamableHTTPServer(s)
+
+	slog.Info("Streamable HTTP server listening on " + addr)
+	return serveHTTP(ctx, httpServer, addr)
+}
+
+type httpServer interface {
+	Start(addr string) error
+	Shutdown(ctx context.Context) error
+}
+
+// serveHTTP starts the server and shuts it down when ctx is cancelled.
+func serveHTTP(ctx context.Context, srv httpServer, addr string) error {
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- srv.Start(addr)
+	}()
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+		slog.Info("Shutting down HTTP server")
+		return srv.Shutdown(context.Background())
+	}
 }
