@@ -86,36 +86,26 @@ func Load(domainOverride string) (*Config, error) {
 		fmt.Println("Luno API credentials not found. Operating in unauthenticated mode.")
 	}
 
-	// Check if debug mode is enabled via environment variable
-	debugMode := false
-	if debugEnv := os.Getenv(strings.TrimSpace(EnvLunoAPIDebug)); debugEnv != "" {
-		// Enable debug mode if environment variable is set to "true", "1", or "yes"
-		debugMode = strings.ToLower(debugEnv) == "true" ||
-			debugEnv == "1" ||
-			strings.ToLower(debugEnv) == "yes"
-
-		if debugMode {
-			fmt.Println("Debug mode enabled via environment variable")
-		}
+	debugMode := parseBoolEnv(EnvLunoAPIDebug)
+	if debugMode {
+		fmt.Println("Debug mode enabled via environment variable")
 	}
-
 	cfg.LunoClient.SetDebug(debugMode)
 
-	// Check if write operations are allowed via environment variable
-	allowWriteOps := false
-	if writeOpsEnv := os.Getenv(strings.TrimSpace(EnvAllowWriteOperations)); writeOpsEnv != "" {
-		// Enable write operations if environment variable is set to "true", "1", or "yes"
-		allowWriteOps = strings.ToLower(writeOpsEnv) == "true" ||
-			writeOpsEnv == "1" ||
-			strings.ToLower(writeOpsEnv) == "yes"
-
-		if allowWriteOps {
-			fmt.Println("Write operations enabled via environment variable")
-		}
+	allowWriteOps := parseBoolEnv(EnvAllowWriteOperations)
+	if allowWriteOps {
+		fmt.Println("Write operations enabled via environment variable")
 	}
-
 	cfg.AllowWriteOperations = allowWriteOps
 	return cfg, nil
+}
+
+// parseBoolEnv returns true if the environment variable is set to "true", "1", or "yes" (case-insensitive).
+func parseBoolEnv(key string) bool {
+	val := os.Getenv(strings.TrimSpace(key))
+	return strings.ToLower(val) == "true" ||
+		val == "1" ||
+		strings.ToLower(val) == "yes"
 }
 
 // FormatCurrency formats a decimal amount with the currency code

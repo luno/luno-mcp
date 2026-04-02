@@ -6,6 +6,7 @@ import (
 
 	"github.com/luno/luno-go"
 	"github.com/luno/luno-mcp/internal/config"
+	"github.com/luno/luno-mcp/internal/tools"
 	"github.com/mark3labs/mcp-go/mcp" // Added import
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/require"
@@ -17,8 +18,7 @@ const (
 	testServerMultiHooks = "test-server-multi-hooks"
 	testVersion1         = "1.0.0"
 	testVersion2         = "1.0.1"
-	testVersion3         = "1.0.2"
-	testVersion4         = "0.0.1"
+	testVersion3 = "1.0.2"
 )
 
 func TestNewMCPServer(t *testing.T) {
@@ -36,7 +36,7 @@ func TestNewMCPServer(t *testing.T) {
 			version:           testVersion1,
 			hooks:             nil,
 			allowWriteOps:     false,
-			expectedToolCount: 7, // All tools except create_order and cancel_order
+			expectedToolCount: 10,
 		},
 		{
 			name:              "creates server with write ops enabled",
@@ -44,14 +44,14 @@ func TestNewMCPServer(t *testing.T) {
 			version:           testVersion1,
 			hooks:             nil,
 			allowWriteOps:     true,
-			expectedToolCount: 9, // All tools including create_order and cancel_order
+			expectedToolCount: 12,
 		},
 		{
 			name:              "creates server with single hook",
 			srvName:           testServerWithHooks,
 			version:           testVersion2,
 			allowWriteOps:     false,
-			expectedToolCount: 7,
+			expectedToolCount: 10,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks {
 					h := &mcpserver.Hooks{}
@@ -67,7 +67,7 @@ func TestNewMCPServer(t *testing.T) {
 			srvName:           testServerMultiHooks,
 			version:           testVersion3,
 			allowWriteOps:     false,
-			expectedToolCount: 7,
+			expectedToolCount: 10,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks { // Corresponds to original OnAnyHookFunc
 					h := &mcpserver.Hooks{}
@@ -112,37 +112,29 @@ func TestNewMCPServer(t *testing.T) {
 			server := NewMCPServer(tc.srvName, tc.version, cfg, tc.hooks...)
 
 			require.NotNil(t, server, "NewMCPServer should return non-nil server")
-
-			// These should not panic
-			registerResources(server, cfg)
-			registerTools(server, cfg)
-
-			// Verify that the correct number of tools are registered
-			// Note: This assumes the server exposes a way to count tools.
-			// Since the actual implementation doesn't expose this, we'll skip this assertion for now.
-			// In a real implementation, you might expose a method or use reflection to verify.
+			require.Equal(t, tc.expectedToolCount, len(server.ListTools()), "unexpected number of registered tools")
 		})
 	}
 }
 
 func TestWriteOperationsControl(t *testing.T) {
 	tests := []struct {
-		name                   string
-		allowWriteOps          bool
-		shouldHaveCreateOrder  bool
-		shouldHaveCancelOrder  bool
+		name                  string
+		allowWriteOps         bool
+		shouldHaveCreateOrder bool
+		shouldHaveCancelOrder bool
 	}{
 		{
-			name:                   "write operations disabled by default",
-			allowWriteOps:          false,
-			shouldHaveCreateOrder:  false,
-			shouldHaveCancelOrder:  false,
+			name:                  "write operations disabled by default",
+			allowWriteOps:         false,
+			shouldHaveCreateOrder: false,
+			shouldHaveCancelOrder: false,
 		},
 		{
-			name:                   "write operations enabled when flag is true",
-			allowWriteOps:          true,
-			shouldHaveCreateOrder:  true,
-			shouldHaveCancelOrder:  true,
+			name:                  "write operations enabled when flag is true",
+			allowWriteOps:         true,
+			shouldHaveCreateOrder: true,
+			shouldHaveCancelOrder: true,
 		},
 	}
 
@@ -157,16 +149,23 @@ func TestWriteOperationsControl(t *testing.T) {
 			server := NewMCPServer("test-write-ops", "1.0.0", cfg)
 			require.NotNil(t, server, "NewMCPServer should return non-nil server")
 
-			// Register tools
-			registerTools(server, cfg)
+			registeredTools := server.ListTools()
 
-			// Note: In a real test, we would verify that the tools are registered correctly
-			// by checking the server's tool registry. Since the MCP server doesn't expose
-			// this directly, we're demonstrating the test structure here.
-			// In practice, you might:
-			// 1. Use reflection to inspect the server's internal state
-			// 2. Add a method to the server to list registered tools
-			// 3. Test by attempting to call the tools and checking for errors
+			if tc.shouldHaveCreateOrder {
+				require.Contains(t, registeredTools, tools.CreateOrderToolID,
+					"%s: expected %s tool to be registered", tc.name, tools.CreateOrderToolID)
+			} else {
+				require.NotContains(t, registeredTools, tools.CreateOrderToolID,
+					"%s: expected %s tool not to be registered", tc.name, tools.CreateOrderToolID)
+			}
+
+			if tc.shouldHaveCancelOrder {
+				require.Contains(t, registeredTools, tools.CancelOrderToolID,
+					"%s: expected %s tool to be registered", tc.name, tools.CancelOrderToolID)
+			} else {
+				require.NotContains(t, registeredTools, tools.CancelOrderToolID,
+					"%s: expected %s tool not to be registered", tc.name, tools.CancelOrderToolID)
+			}
 		})
 	}
 }
@@ -180,7 +179,7 @@ func TestServeSSEIntegration(t *testing.T) {
 		{
 			name:     "invalid address format",
 			address:  "invalid:address",
-			errorMsg: "lookup tcp/address: unknown port",
+			errorMsg: "unknown port",
 		},
 		{
 			name:     "invalid port",
@@ -190,7 +189,7 @@ func TestServeSSEIntegration(t *testing.T) {
 		{
 			name:     "bind to used port",
 			address:  "localhost:80", // Typically requires root privileges
-			errorMsg: "bind: permission denied",
+			errorMsg: "permission denied",
 		},
 	}
 

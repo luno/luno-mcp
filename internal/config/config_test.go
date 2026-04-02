@@ -248,7 +248,7 @@ func TestLoad(t *testing.T) {
 			}
 
 			if cfg.AllowWriteOperations != tc.expectedAllowWriteOps {
-				t.Errorf("Expected AllowWriteOperations to be %v, got %v", tc.expectedAllowWriteOps, cfg.AllowWriteOperations)
+				t.Errorf("%s: expected AllowWriteOperations=%v, got %v", tc.name, tc.expectedAllowWriteOps, cfg.AllowWriteOperations)
 			}
 		})
 	}
