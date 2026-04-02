@@ -13,16 +13,6 @@ A [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that pr
 
 This server enables integration with Claude Code/VSCode/Cursor (and other MCP-compatible clients), providing contextual information and functionality related to the Luno cryptocurrency exchange.
 
-## ⚠️ Beta Warning
-
-This project is currently in **beta phase**. While we've made every effort to ensure stability and reliability, you may encounter unexpected behavior or limitations. Please use it with care and consider the following:
-
-- This MCP server config may change without prior notice
-- Performance and reliability might not be optimal
-- Not all Luno API endpoints are implemented yet
-
-We welcome feedback and bug reports to help improve the project. Please report any issues you encounter via the [GitHub issue tracker](../../issues).
-
 ## Getting started
 
 Some tools require your Luno API key and secret. Get these from your [Luno account settings](https://www.luno.com/developers).
@@ -96,6 +86,10 @@ Click the badges above for one-click Docker install, or add the following to you
 
 ```json
 {
+  "inputs": [
+    {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+    {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+  ],
   "servers": {
     "luno": {
       "command": "docker",
@@ -104,10 +98,6 @@ Click the badges above for one-click Docker install, or add the following to you
         "-e", "LUNO_API_KEY_ID=${input:luno_api_key_id}",
         "-e", "LUNO_API_SECRET=${input:luno_api_secret}",
         "ghcr.io/luno/luno-mcp:latest"
-      ],
-      "inputs": [
-         {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
-         {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
       ]
     }
   }
@@ -118,17 +108,17 @@ Click the badges above for one-click Docker install, or add the following to you
 
 ```json
 {
+  "inputs": [
+    {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+    {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+  ],
   "servers": {
     "luno": {
       "command": "luno-mcp",
       "env": {
         "LUNO_API_KEY_ID": "${input:luno_api_key_id}",
         "LUNO_API_SECRET": "${input:luno_api_secret}"
-      },
-      "inputs": [
-        {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
-        {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
-      ]
+      }
     }
   }
 }
@@ -215,20 +205,20 @@ Optional environment variables:
 
 ## Available Tools
 
-| Tool                | Category            | Description                                       | Auth | Write |
-| ------------------- | ------------------- | ------------------------------------------------- | ---- | ----- |
-| `get_ticker`        | Market Data         | Get current ticker information for a trading pair | ❌   | ❌    |
-| `get_tickers`       | Market Data         | List tickers for given pairs (or all)             | ❌   | ❌    |
-| `get_order_book`    | Market Data         | Get the order book for a trading pair             | ❌   | ❌    |
-| `list_trades`       | Market Data         | List recent trades for a currency pair            | ❌   | ❌    |
-| `get_candles`       | Market Data         | Get candlestick market data for a currency pair   | ❌   | ❌    |
-| `get_markets_info`  | Market Data         | List all supported markets parameter information  | ❌   | ❌    |
-| `get_balances`      | Account Information | Get balances for all accounts                     | ✅   | ❌    |
-| `create_order`      | Trading             | Create a new buy or sell order                    | ✅   | ✅    |
-| `cancel_order`      | Trading             | Cancel an existing order                          | ✅   | ✅    |
-| `list_orders`       | Trading             | List open orders                                  | ✅   | ❌    |
-| `list_transactions` | Transactions        | List transactions for an account                  | ✅   | ❌    |
-| `get_transaction`   | Transactions        | Get details of a specific transaction             | ✅   | ❌    |
+| Tool                | Category            | Description                                       | Auth Required | Write |
+| ------------------- | ------------------- | ------------------------------------------------- | ------------- | ----- |
+| `get_ticker`        | Market Data         | Get current ticker information for a trading pair | ❌            | ❌    |
+| `get_tickers`       | Market Data         | List tickers for given pairs (or all)             | ❌            | ❌    |
+| `get_order_book`    | Market Data         | Get the order book for a trading pair             | ❌            | ❌    |
+| `list_trades`       | Market Data         | List recent trades for a currency pair            | ❌            | ❌    |
+| `get_candles`       | Market Data         | Get candlestick market data for a currency pair   | ❌            | ❌    |
+| `get_markets_info`  | Market Data         | List all supported markets parameter information  | ❌            | ❌    |
+| `get_balances`      | Account Information | Get balances for all accounts                     | ✅            | ❌    |
+| `create_order`      | Trading             | Create a new buy or sell order                    | ✅            | ✅    |
+| `cancel_order`      | Trading             | Cancel an existing order                          | ✅            | ✅    |
+| `list_orders`       | Trading             | List open orders                                  | ✅            | ❌    |
+| `list_transactions` | Transactions        | List transactions for an account                  | ✅            | ❌    |
+| `get_transaction`   | Transactions        | Get details of a specific transaction             | ✅            | ❌    |
 
 ## Command-line options
 
