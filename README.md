@@ -82,7 +82,7 @@ Follow the Windsurf MCP [documentation](https://docs.windsurf.com/windsurf/casca
 
 Click the badges above for one-click Docker install, or add the following to your VS Code `settings.json` or `.vscode/mcp.json`:
 
-#### With Docker
+### With Docker
 
 ```json
 {
@@ -104,7 +104,7 @@ Click the badges above for one-click Docker install, or add the following to you
 }
 ```
 
-#### From source
+### From source
 
 ```json
 {
@@ -124,7 +124,7 @@ Click the badges above for one-click Docker install, or add the following to you
 }
 ```
 
-#### SSE transport
+### SSE transport
 
 ```json
 {
@@ -226,7 +226,7 @@ Optional environment variables:
 - `--sse-address`: Address for SSE transport (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)
-- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also configurable via `ALLOW_WRITE_OPERATIONS` env var
+- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also, configurable via `ALLOW_WRITE_OPERATIONS` env var
 
 ## Examples
 
