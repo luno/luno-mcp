@@ -195,16 +195,9 @@ func TestLoadEnvFile(t *testing.T) {
 			originalWd, _ := os.Getwd()
 			defer func() { _ = os.Chdir(originalWd) }()
 
-			// Setup files
+			// Setup files in tempDir (parent of any subdirectory we'll chdir into)
 			for relativeFilePath, content := range tt.setupFiles {
-				var fullPath string
-				if tt.workingDir != "" {
-					// If we have a working directory, put the file in the parent (tempDir)
-					fullPath = filepath.Join(tempDir, relativeFilePath)
-				} else {
-					// Put the file in the current directory we'll change to
-					fullPath = filepath.Join(tempDir, relativeFilePath)
-				}
+				fullPath := filepath.Join(tempDir, relativeFilePath)
 
 				err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
 				require.NoError(t, err)
