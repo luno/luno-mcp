@@ -13,17 +13,188 @@ A [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that pr
 
 This server enables integration with Claude Code/VSCode/Cursor (and other MCP-compatible clients), providing contextual information and functionality related to the Luno cryptocurrency exchange.
 
-## ⚠️ Beta Warning
+## Getting started
 
-This project is currently in **beta phase**. While we've made every effort to ensure stability and reliability, you may encounter unexpected behavior or limitations. Please use it with care and consider the following:
+Some tools require your Luno API key and secret. Get these from your [Luno account settings](https://www.luno.com/developers).
 
-- This MCP server config may change without prior notice
-- Performance and reliability might not be optimal
-- Not all Luno API endpoints are implemented yet
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522luno-mcp%2522%252C%2522command%2522%253A%2522docker%2522%252C%2522args%2522%253A%255B%2522run%2522%252C%2522--rm%2522%252C%2522-i%2522%252C%2522-e%2522%252C%2522LUNO_API_KEY_ID%253D%2524%257Binput%253Aluno_api_key_id%257D%2522%252C%2522-e%2522%252C%2522LUNO_API_SECRET%253D%2524%257Binput%253Aluno_api_secret%257D%2522%252C%2522ghcr.io%252Fluno%252Fluno-mcp%253Alatest%2522%255D%252C%2522inputs%2522%253A%255B%257B%2522id%2522%253A%2522luno_api_key_id%2522%252C%2522type%2522%253A%2522promptString%2522%252C%2522description%2522%253A%2522Luno%2520API%2520Key%2520ID%2522%252C%2522password%2522%253Atrue%257D%252C%257B%2522id%2522%253A%2522luno_api_secret%2522%252C%2522type%2522%253A%2522promptString%2522%252C%2522description%2522%253A%2522Luno%2520API%2520Secret%2522%252C%2522password%2522%253Atrue%257D%255D%257D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522luno-mcp%2522%252C%2522command%2522%253A%2522docker%2522%252C%2522args%2522%253A%255B%2522run%2522%252C%2522--rm%2522%252C%2522-i%2522%252C%2522-e%2522%252C%2522LUNO_API_KEY_ID%253D%2524%257Binput%253Aluno_api_key_id%257D%2522%252C%2522-e%2522%252C%2522LUNO_API_SECRET%253D%2524%257Binput%253Aluno_api_secret%257D%2522%252C%2522ghcr.io%252Fluno%252Fluno-mcp%253Alatest%2522%255D%252C%2522inputs%2522%253A%255B%257B%2522id%2522%253A%2522luno_api_key_id%2522%252C%2522type%2522%253A%2522promptString%2522%252C%2522description%2522%253A%2522Luno%2520API%2520Key%2520ID%2522%252C%2522password%2522%253Atrue%257D%252C%257B%2522id%2522%253A%2522luno_api_secret%2522%252C%2522type%2522%253A%2522promptString%2522%252C%2522description%2522%253A%2522Luno%2520API%2520Secret%2522%252C%2522password%2522%253Atrue%257D%255D%257D) [<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor">](https://cursor.com/en/install-mcp?name=luno-mcp&config=eyJjb21tYW5kIjoiZG9ja2VyIiwiYXJncyI6WyJydW4iLCItLXJtIiwiLWkiLCItZSIsIkxVTk9fQVBJX0tFWV9JRD1ZT1VSX0FQSV9LRVlfSUQiLCItZSIsIkxVTk9fQVBJX1NFQ1JFVD1ZT1VSX0FQSV9TRUNSRVQiLCJnaGNyLmlvL2x1bm8vbHVuby1tY3A6bGF0ZXN0Il19)
 
-We welcome feedback and bug reports to help improve the project. Please report any issues you encounter via the [GitHub issue tracker](../../issues).
+**Standard config** (Docker) works with most MCP clients:
 
-[![Install in VS Code with Docker](<https://img.shields.io/badge/VS_Code-Install_Luno_MCP_(Docker)-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white>)](https://insiders.vscode.dev/redirect/mcp/install?name=luno-mcp&inputs=%5B%7B%22id%22%3A%22luno_api_key_id%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Luno%20API%20Key%20ID%22%2C%22password%22%3Atrue%7D%2C%7B%22id%22%3A%22luno_api_secret%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Luno%20API%20Secret%22%2C%22password%22%3Atrue%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%20%22--rm%22%2C%20%22-i%22%2C%20%22-e%22%2C%20%22LUNO_API_KEY_ID%3D%24%7Binput%3Aluno_api_key_id%7D%22%2C%20%22-e%22%2C%20%22LUNO_API_SECRET%3D%24%7Binput%3Aluno_api_secret%7D%22%2C%20%22ghcr.io%2Fluno%2Fluno-mcp%3Alatest%22%5D%7D)
+```json
+{
+  "mcpServers": {
+    "luno": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "LUNO_API_KEY_ID=YOUR_API_KEY_ID",
+        "-e", "LUNO_API_SECRET=YOUR_API_SECRET",
+        "ghcr.io/luno/luno-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+<details>
+<summary>Claude Code</summary>
+
+Using Docker:
+
+```bash
+claude mcp add luno -- docker run --rm -i -e LUNO_API_KEY_ID=YOUR_API_KEY_ID -e LUNO_API_SECRET=YOUR_API_SECRET ghcr.io/luno/luno-mcp:latest
+```
+
+Or if you've built from source:
+
+```bash
+claude mcp add luno -e LUNO_API_KEY_ID=YOUR_API_KEY_ID -e LUNO_API_SECRET=YOUR_API_SECRET -- luno-mcp
+```
+
+</details>
+
+<details>
+<summary>Claude Desktop</summary>
+
+Add to your `claude_desktop_config.json` ([setup guide](https://modelcontextprotocol.io/quickstart/user)) using the standard config above.
+
+</details>
+
+<details>
+<summary>Cursor</summary>
+
+Go to `Cursor Settings` → `MCP` → `Add new MCP Server`. Use `command` type with command `docker` and the args from the standard config above.
+
+Or add the standard config to your `.cursor/mcp.json`.
+
+</details>
+
+<details>
+<summary>Windsurf</summary>
+
+Follow the Windsurf MCP [documentation](https://docs.windsurf.com/windsurf/cascade/mcp). Use the standard config above.
+
+</details>
+
+<details>
+<summary>VS Code (manual configuration)</summary>
+
+Click the badges above for one-click Docker install, or add the following to your VS Code `settings.json` or `.vscode/mcp.json`:
+
+### With Docker
+
+```json
+{
+  "inputs": [
+    {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+    {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+  ],
+  "servers": {
+    "luno": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "LUNO_API_KEY_ID=${input:luno_api_key_id}",
+        "-e", "LUNO_API_SECRET=${input:luno_api_secret}",
+        "ghcr.io/luno/luno-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+### From source
+
+```json
+{
+  "inputs": [
+    {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
+    {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
+  ],
+  "servers": {
+    "luno": {
+      "command": "luno-mcp",
+      "env": {
+        "LUNO_API_KEY_ID": "${input:luno_api_key_id}",
+        "LUNO_API_SECRET": "${input:luno_api_secret}"
+      }
+    }
+  }
+}
+```
+
+### SSE transport
+
+```json
+{
+  "servers": {
+    "luno": {
+      "type": "sse",
+      "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Building from source</summary>
+
+Requires Go 1.25 or later.
+
+Install directly:
+
+```bash
+go install github.com/luno/luno-mcp/cmd/server@latest
+```
+
+Or clone and build:
+
+```bash
+git clone https://github.com/luno/luno-mcp
+cd luno-mcp
+go build -o luno-mcp ./cmd/server
+```
+
+Optionally make it available system-wide:
+
+```bash
+sudo mv luno-mcp /usr/local/bin/
+```
+
+</details>
+
+<details>
+<summary>Docker</summary>
+
+Use the standard config above, or run directly:
+
+```bash
+docker run --rm -i \
+  -e LUNO_API_KEY_ID=YOUR_API_KEY_ID \
+  -e LUNO_API_SECRET=YOUR_API_SECRET \
+  ghcr.io/luno/luno-mcp:latest
+```
+
+For SSE mode:
+
+```bash
+docker run --rm \
+  -e LUNO_API_KEY_ID=YOUR_API_KEY_ID \
+  -e LUNO_API_SECRET=YOUR_API_SECRET \
+  -p 8080:8080 \
+  ghcr.io/luno/luno-mcp:latest \
+  --transport sse --sse-address 0.0.0.0:8080
+```
+
+Optional environment variables:
+- `LUNO_API_DEBUG=true` — Enable debug logging
+- `LUNO_API_DOMAIN=api.staging.luno.com` — Override API domain
+- `ALLOW_WRITE_OPERATIONS=true` — Enable write operations (`create_order`, `cancel_order`)
+
+</details>
 
 ## Features
 
@@ -32,36 +203,30 @@ We welcome feedback and bug reports to help improve the project. Please report a
 - **Security**: Secure authentication using Luno API keys
 - **VS Code Integration**: Easy integration with VSCode, or other AI IDEs
 
-## Usage
+## Available Tools
 
-### Setting up credentials
+| Tool                | Category            | Description                                       | Auth Required | Write |
+| ------------------- | ------------------- | ------------------------------------------------- | ------------- | ----- |
+| `get_ticker`        | Market Data         | Get current ticker information for a trading pair | ❌            | ❌    |
+| `get_tickers`       | Market Data         | List tickers for given pairs (or all)             | ❌            | ❌    |
+| `get_order_book`    | Market Data         | Get the order book for a trading pair             | ❌            | ❌    |
+| `list_trades`       | Market Data         | List recent trades for a currency pair            | ❌            | ❌    |
+| `get_candles`       | Market Data         | Get candlestick market data for a currency pair   | ❌            | ❌    |
+| `get_markets_info`  | Market Data         | List all supported markets parameter information  | ❌            | ❌    |
+| `get_balances`      | Account Information | Get balances for all accounts                     | ✅            | ❌    |
+| `create_order`      | Trading             | Create a new buy or sell order                    | ✅            | ✅    |
+| `cancel_order`      | Trading             | Cancel an existing order                          | ✅            | ✅    |
+| `list_orders`       | Trading             | List open orders                                  | ✅            | ❌    |
+| `list_transactions` | Transactions        | List transactions for an account                  | ✅            | ❌    |
+| `get_transaction`   | Transactions        | Get details of a specific transaction             | ✅            | ❌    |
 
-The server may require your Luno API key and secret for certain endpoints. These can be obtained from your Luno account settings, see here for more info: [https://www.luno.com/developers](https://www.luno.com/developers).
-
-### Command-line options
+## Command-line options
 
 - `--transport`: Transport type (`stdio` or `sse`, default: `stdio`)
 - `--sse-address`: Address for SSE transport (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)
 - `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also, configurable via `ALLOW_WRITE_OPERATIONS` env var
-
-## Available Tools
-
-| Tool                | Category            | Description                                       | Auth | Write |
-| ------------------- | ------------------- | ------------------------------------------------- | ---- | ----- |
-| `get_ticker`        | Market Data         | Get current ticker information for a trading pair | ❌   | ❌    |
-| `get_tickers`       | Market Data         | List tickers for given pairs (or all)             | ❌   | ❌    |
-| `get_order_book`    | Market Data         | Get the order book for a trading pair             | ❌   | ❌    |
-| `list_trades`       | Market Data         | List recent trades for a currency pair            | ❌   | ❌    |
-| `get_candles`       | Market Data         | Get candlestick market data for a currency pair   | ❌   | ❌    |
-| `get_markets_info`  | Market Data         | List all supported markets parameter information  | ❌   | ❌    |
-| `get_balances`      | Account Information | Get balances for all accounts                     | ✅   | ❌    |
-| `create_order`      | Trading             | Create a new buy or sell order                    | ✅   | ✅    |
-| `cancel_order`      | Trading             | Cancel an existing order                          | ✅   | ✅    |
-| `list_orders`       | Trading             | List open orders                                  | ✅   | ❌    |
-| `list_transactions` | Transactions        | List transactions for an account                  | ✅   | ❌    |
-| `get_transaction`   | Transactions        | Get details of a specific transaction             | ✅   | ❌    |
 
 ## Examples
 
@@ -101,111 +266,6 @@ Show me recent trades for XBTZAR
 What's the latest price for Bitcoin in ZAR?
 ```
 
-## VS Code Integration
-
-To integrate with VS Code, add the following to your settings.json file (or click on the badge at the top of this README for the docker config).
-
-### With Docker
-
-This configuration will make VS Code run the Docker container. Ensure Docker is running on your system.
-
-```json
-{
-  "servers": {
-    "luno-docker": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "-e", "LUNO_API_KEY_ID=${input:luno_api_key_id}",
-        "-e", "LUNO_API_SECRET=${input:luno_api_secret}",
-        // Optional: Add debug info
-        // "-e", "LUNO_API_DEBUG=true",
-        // Optional: Override default API domain
-        // "-e", "LUNO_API_DOMAIN=api.staging.luno.com",
-        // Optional: Enable write operations (create_order, cancel_order) - disabled by default
-        // "-e", "ALLOW_WRITE_OPERATIONS=true",
-        "ghcr.io/luno/luno-mcp:latest"
-      ],
-      "inputs": [
-         {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
-         {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
-      ]
-    }
-  }
-}
-```
-
-### Building from source
-
-**For MCP client usage**: Add one of the config options below to your VS Code `settings.json` or `mcp.json` file. The credentials will be provided through VS Code's input prompts.
-
-**For direct development**: You'll also need to set up environment variables or a `.env` file as described in the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
-
-#### For stdio transport
-
-```json
-"mcp": {
-  "servers": {
-    "luno": {
-      "command": "luno-mcp",
-      "args": [],
-      "env": {
-        "LUNO_API_KEY_ID": "${input:luno_api_key_id}",
-        "LUNO_API_SECRET": "${input:luno_api_secret}"
-        // Optional: "ALLOW_WRITE_OPERATIONS": "true"
-      },
-      "inputs": [
-        {"id": "luno_api_key_id", "type": "promptString", "description": "Luno API Key ID", "password": true},
-        {"id": "luno_api_secret", "type": "promptString", "description": "Luno API Secret", "password": true}
-      ]
-    }
-  }
-}
-```
-
-#### For SSE transport
-
-```json
-"mcp": {
-  "servers": {
-    "luno": {
-      "type": "sse",
-      "url": "http://localhost:8080/sse"
-    }
-  }
-}
-```
-
-## Installation
-
-### Prerequisites
-
-- Go 1.24 or later
-- Luno account with API key and secret
-
-### Building from Source
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/luno/luno-mcp
-   cd luno-mcp
-   ```
-
-2. Build the binary:
-
-   ```bash
-   go build -o luno-mcp ./cmd/server
-   ```
-
-3. Make it available system-wide (optional):
-
-   ```bash
-   sudo mv luno-mcp /usr/local/bin/
-   ```
-
-**Note**: When using with MCP clients like VS Code, credentials are provided through the client's input system. For direct development and testing, see the credential setup instructions in CONTRIBUTING.md.
-
 ## Security Considerations
 
 This tool requires API credentials that have access to your Luno account. Be cautious when using API keys, especially ones with withdrawal permissions. It's recommended to create API keys with only the permissions needed for your specific use case.
@@ -222,7 +282,7 @@ By default, the MCP server runs in **read-only mode** — `create_order` and `ca
 4. **Monitor API Usage**: Regularly check your Luno account for any unauthorized activity
 5. **Use Read-Only Mode by Default**: Only enable write operations when specifically needed
 
-### Contributing
+## Contributing
 
 If you'd like to contribute to the development of this project, please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines.
 
