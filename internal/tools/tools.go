@@ -323,14 +323,14 @@ func HandleGetMarketsInfo(cfg *config.Config) server.ToolHandlerFunc {
 
 // ===== Trading Tools =====
 
-// HandleWriteOperationDisabled returns a handler for write tools when they are disabled.
+// The handler always responds with an MCP tool error containing ErrWriteOperationDisabled.
 func HandleWriteOperationDisabled() server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		return mcp.NewToolResultError(ErrWriteOperationDisabled), nil
 	}
 }
 
-// NewCreateOrderTool creates a new tool for creating limit orders
+// `volume` (amount of cryptocurrency to trade) and `price` (limit price as a decimal string).
 func NewCreateOrderTool() mcp.Tool {
 	return mcp.NewTool(
 		CreateOrderToolID,
@@ -459,7 +459,8 @@ func HandleCreateOrder(cfg *config.Config) server.ToolHandlerFunc {
 	}
 }
 
-// NewCancelOrderTool creates a new tool for canceling orders
+// NewCancelOrderTool creates an MCP tool that cancels an existing order.
+// The tool requires an "order_id" string parameter and its description indicates it is a write operation.
 func NewCancelOrderTool() mcp.Tool {
 	return mcp.NewTool(
 		CancelOrderToolID,

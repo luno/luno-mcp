@@ -56,7 +56,11 @@ func registerResources(server *mcpserver.MCPServer, cfg *config.Config) {
 	server.AddResourceTemplate(accountTemplate, resources.HandleAccountTemplate(cfg))
 }
 
-// registerTools registers all tools with the MCP server
+// registerTools registers all available tools with the MCP server.
+// It always registers trading tools for create and cancel orders; if cfg.AllowWriteOperations
+// is false those tools are wired to handlers that return an informative "write disabled"
+// response. The cfg parameter controls whether write-operation handlers accept requests or
+// are registered as disabled.
 func registerTools(server *mcpserver.MCPServer, cfg *config.Config) {
 	// Add balance tools
 	balancesTool := tools.NewGetBalancesTool()
