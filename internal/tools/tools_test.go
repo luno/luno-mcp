@@ -191,6 +191,33 @@ func TestToolCreation(t *testing.T) {
 	}
 }
 
+func TestHandleWriteOperationDisabled(t *testing.T) {
+	tests := []struct {
+		name               string
+		expectedSubstrings []string
+	}{
+		{
+			name:               "returns error with CLI flag and env var instructions",
+			expectedSubstrings: []string{"--allow-write-operations", "ALLOW_WRITE_OPERATIONS"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			handler := HandleWriteOperationDisabled()
+
+			result, err := handler(context.Background(), mcp.CallToolRequest{})
+			assert.NoError(t, err)
+			assert.True(t, result.IsError, "result should be an error")
+
+			text := getTextContentFromResult(t, result)
+			for _, substring := range tc.expectedSubstrings {
+				assert.Contains(t, text, substring)
+			}
+		})
+	}
+}
+
 // Helper function to extract text content from mcp.CallToolResult
 func getTextContentFromResult(t *testing.T, result *mcp.CallToolResult) string {
 	if result == nil || len(result.Content) == 0 {

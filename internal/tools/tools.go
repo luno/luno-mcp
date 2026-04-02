@@ -19,8 +19,11 @@ import (
 // Error messages
 const (
 	ErrAPICredentialsRequired = "API credentials are required for this operation. Please set LUNO_API_KEY_ID and LUNO_API_SECRET environment variables."
+	ErrWriteOperationDisabled = "Write operations are disabled. To enable, restart the server with the --allow-write-operations flag or set the ALLOW_WRITE_OPERATIONS=true environment variable."
 	ErrTradingPairRequired    = "Trading pair is required"
 	ErrTradingPairDesc        = "Trading pair (e.g., XBTZAR)"
+
+	writeOperationNotice = " This is a write operation that must be explicitly enabled via the --allow-write-operations flag or ALLOW_WRITE_OPERATIONS environment variable."
 )
 
 // Tool IDs
@@ -320,11 +323,18 @@ func HandleGetMarketsInfo(cfg *config.Config) server.ToolHandlerFunc {
 
 // ===== Trading Tools =====
 
-// NewCreateOrderTool creates a new tool for creating limit orders
+// The handler always responds with an MCP tool error containing ErrWriteOperationDisabled.
+func HandleWriteOperationDisabled() server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		return mcp.NewToolResultError(ErrWriteOperationDisabled), nil
+	}
+}
+
+// `volume` (amount of cryptocurrency to trade) and `price` (limit price as a decimal string).
 func NewCreateOrderTool() mcp.Tool {
 	return mcp.NewTool(
 		CreateOrderToolID,
-		mcp.WithDescription("Create a new limit order"),
+		mcp.WithDescription("Create a new limit order."+writeOperationNotice),
 		mcp.WithString(
 			"pair",
 			mcp.Required(),
@@ -449,11 +459,12 @@ func HandleCreateOrder(cfg *config.Config) server.ToolHandlerFunc {
 	}
 }
 
-// NewCancelOrderTool creates a new tool for canceling orders
+// NewCancelOrderTool creates an MCP tool that cancels an existing order.
+// The tool requires an "order_id" string parameter and its description indicates it is a write operation.
 func NewCancelOrderTool() mcp.Tool {
 	return mcp.NewTool(
 		CancelOrderToolID,
-		mcp.WithDescription("Cancel an order"),
+		mcp.WithDescription("Cancel an order."+writeOperationNotice),
 		mcp.WithString(
 			"order_id",
 			mcp.Required(),
