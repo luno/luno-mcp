@@ -12,9 +12,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `make pre-commit` - Install pre-commit hooks
 
 ### Running the Server
-- `make run-stdio` - Run server in stdio mode (default MCP transport)
+- `make run-stdio` - Run server in stdio mode
 - `make run-sse` - Run server in SSE mode on localhost:8080
+- `make run-streamable-http` - Run server in Streamable HTTP mode on localhost:8080 (default transport)
 - `go run ./cmd/server --transport sse --sse-address localhost:8080` - Custom SSE configuration
+- `go run ./cmd/server --transport streamable-http --sse-address localhost:8080` - Custom Streamable HTTP configuration
 
 ### Pre-commit Hooks
 Pre-commit hooks are required and run automatically on commit:
@@ -65,8 +67,8 @@ Copy `.env.example` to `.env` and populate values.
 **Note:** MCP clients (VS Code, etc.) provide credentials through input prompts, not environment variables.
 
 ### Available Command-Line Flags
-- `--transport` - Transport type (stdio or sse, default: stdio)
-- `--sse-address` - SSE server address (default: localhost:8080)
+- `--transport` - Transport type (stdio, sse, or streamable-http; default: streamable-http)
+- `--sse-address` - Server address for SSE and Streamable HTTP transports (default: localhost:8080)
 - `--domain` - Luno API domain override
 - `--log-level` - Logging level (debug, info, warn, error, default: info)
 - `--allow-write-operations` - Enable write operations (create_order, cancel_order); also via ALLOW_WRITE_OPERATIONS env var
@@ -116,3 +118,5 @@ Build: `docker build -t luno-mcp .`
 Run with environment file: `docker run --env-file .env luno-mcp`
 
 SSE mode: `docker run --env-file .env -p 8080:8080 luno-mcp --transport sse --sse-address 0.0.0.0:8080`
+
+Streamable HTTP mode: `docker run --env-file .env -p 8080:8080 luno-mcp --transport streamable-http --sse-address 0.0.0.0:8080`
