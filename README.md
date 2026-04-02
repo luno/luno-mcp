@@ -44,6 +44,7 @@ The server may require your Luno API key and secret for certain endpoints. These
 - `--sse-address`: Address for SSE transport (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)
+- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also configurable via `ALLOW_WRITE_OPERATIONS` env var
 
 ## Available Tools
 

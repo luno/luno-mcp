@@ -69,6 +69,7 @@ Copy `.env.example` to `.env` and populate values.
 - `--sse-address` - SSE server address (default: localhost:8080)
 - `--domain` - Luno API domain override
 - `--log-level` - Logging level (debug, info, warn, error, default: info)
+- `--allow-write-operations` - Enable write operations (create_order, cancel_order); also via ALLOW_WRITE_OPERATIONS env var
 
 ## Code Conventions
 
