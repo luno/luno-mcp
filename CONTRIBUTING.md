@@ -164,7 +164,7 @@ Runs daily at 9am UTC (or on manual trigger):
 1. Checks for commits since the last release tag — skips if there are none
 2. Bumps the patch version and creates a new tag (e.g. `v0.2.1` → `v0.2.2`)
 3. Builds binaries for `darwin/arm64`, `darwin/amd64`, `linux/amd64`, and `linux/arm64`
-4. Creates a GitHub release with the binaries as `.tar.gz` assets and a `checksums.txt`
+4. Creates a GitHub release with the binaries as `.tar.gz` assets and `checksums.txt`
 5. Dispatches a `new-release` event to the [luno/luno-mcp-homebrew](https://github.com/luno/luno-mcp-homebrew) tap repo, which auto-updates the formula with the new version and SHA256s
 
 #### Docker image (`docker-publish.yml`)
