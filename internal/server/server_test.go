@@ -38,7 +38,7 @@ func TestNewMCPServer(t *testing.T) {
 			version:           testVersion1,
 			hooks:             nil,
 			allowWriteOps:     false,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 		},
 		{
 			name:              "creates server with write ops enabled",
@@ -46,14 +46,14 @@ func TestNewMCPServer(t *testing.T) {
 			version:           testVersion1,
 			hooks:             nil,
 			allowWriteOps:     true,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 		},
 		{
 			name:              "creates server with single hook",
 			srvName:           testServerWithHooks,
 			version:           testVersion2,
 			allowWriteOps:     false,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks {
 					h := &mcpserver.Hooks{}
@@ -69,7 +69,7 @@ func TestNewMCPServer(t *testing.T) {
 			srvName:           testServerMultiHooks,
 			version:           testVersion3,
 			allowWriteOps:     false,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks { // Corresponds to original OnAnyHookFunc
 					h := &mcpserver.Hooks{}

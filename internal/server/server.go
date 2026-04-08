@@ -111,6 +111,9 @@ func registerTools(server *mcpserver.MCPServer, cfg *config.Config) {
 
 	getMarketsInfoTool := tools.NewGetMarketsInfoTool()
 	server.AddTool(getMarketsInfoTool, tools.HandleGetMarketsInfo(cfg))
+
+	getAvailableMarketsTool := tools.NewGetAvailableMarketsTool()
+	server.AddTool(getAvailableMarketsTool, tools.HandleGetAvailableMarkets(cfg))
 }
 
 // ServeStdio starts the server using the Stdio transport

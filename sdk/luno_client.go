@@ -24,6 +24,7 @@ type LunoClient interface {
 	GetTickers(ctx context.Context, req *luno.GetTickersRequest) (*luno.GetTickersResponse, error)
 	GetOrderBookFull(ctx context.Context, req *luno.GetOrderBookFullRequest) (*luno.GetOrderBookFullResponse, error)
 	Markets(ctx context.Context, req *luno.MarketsRequest) (*luno.MarketsResponse, error)
+	GetAccountMarkets(ctx context.Context, req *luno.GetAccountMarketsRequest) (*luno.GetAccountMarketsResponse, error)
 	SetBaseURL(url string)
 	SetAuth(id, secret string) error
 	SetDebug(debug bool)

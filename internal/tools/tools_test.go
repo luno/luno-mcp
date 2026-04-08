@@ -1282,6 +1282,33 @@ func TestHandleCreateOrder(t *testing.T) {
 			errorContains:   "Failed to create limit order",
 		},
 		{
+			name: "CreateOrder market not allowed for account",
+			requestParams: map[string]any{
+				"pair":   "XBTZAR",
+				"type":   "BUY",
+				"volume": "0.01",
+				"price":  "1000000",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				vol := NewFromString(t, "0.01")
+				price := NewFromString(t, "1000000")
+
+				mockClient.EXPECT().GetTicker(context.Background(), &luno.GetTickerRequest{Pair: "XBTZAR"}).
+					Return(&luno.GetTickerResponse{Pair: "XBTZAR"}, nil)
+				mockClient.EXPECT().GetOrderBook(context.Background(), &luno.GetOrderBookRequest{Pair: "XBTZAR"}).
+					Return(&luno.GetOrderBookResponse{}, nil)
+				mockClient.EXPECT().PostLimitOrder(context.Background(), &luno.PostLimitOrderRequest{
+					Pair:   "XBTZAR",
+					Type:   luno.OrderTypeBid,
+					Volume: vol,
+					Price:  price,
+				}).Return(nil, luno.Error{Code: "ErrMarketNotAllowed", Message: "market not allowed"})
+			},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Market XBTZAR is not enabled for your account",
+		},
+		{
 			name: "CreateOrder GetTicker API error",
 			requestParams: map[string]any{
 				"pair":   "XBTZAR",
@@ -1527,6 +1554,101 @@ func TestHandleGetCandles(t *testing.T) {
 				}
 			} else {
 				assert.False(t, result.IsError)
+			}
+		})
+	}
+}
+
+func TestGetAvailableMarketsTool(t *testing.T) {
+	tool := NewGetAvailableMarketsTool()
+	assert.Equal(t, GetAvailableMarketsToolID, tool.Name)
+}
+
+func TestHandleGetAvailableMarkets(t *testing.T) {
+	tests := []struct {
+		name            string
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
+		checkResult     func(t *testing.T, result string)
+	}{
+		{
+			name: "returns account markets from dedicated endpoint",
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockClient.EXPECT().GetAccountMarkets(context.Background(), &luno.GetAccountMarketsRequest{}).
+					Return(&luno.GetAccountMarketsResponse{
+						Markets: []luno.MarketInfo{
+							{MarketId: "XBTZAR", TradingStatus: luno.TradingStatusActive},
+							{MarketId: "ETHZAR", TradingStatus: luno.TradingStatusActive},
+						},
+					}, nil)
+			},
+			isAuthenticated: true,
+			expectedError:   false,
+			checkResult: func(t *testing.T, result string) {
+				t.Helper()
+				assert.Contains(t, result, "XBTZAR")
+				assert.Contains(t, result, "ETHZAR")
+			},
+		},
+		{
+			name: "unauthenticated",
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+			},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
+		},
+		{
+			name: "GetAccountMarkets API error",
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockClient.EXPECT().GetAccountMarkets(context.Background(), &luno.GetAccountMarketsRequest{}).
+					Return(nil, errors.New("API error"))
+			},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "getting account markets",
+		},
+		{
+			name: "empty account markets returns empty list",
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockClient.EXPECT().GetAccountMarkets(context.Background(), &luno.GetAccountMarketsRequest{}).
+					Return(&luno.GetAccountMarketsResponse{Markets: []luno.MarketInfo{}}, nil)
+			},
+			isAuthenticated: true,
+			expectedError:   false,
+			checkResult: func(t *testing.T, result string) {
+				t.Helper()
+				assert.Contains(t, result, `"markets": []`)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := sdk.NewMockLunoClient(t)
+			tt.mockSetup(t, mockClient)
+
+			cfg := &config.Config{
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
+			}
+
+			handler := HandleGetAvailableMarkets(cfg)
+			result, err := handler(context.Background(), createMockRequest(map[string]any{}))
+
+			assert.NoError(t, err)
+			if tt.expectedError {
+				assert.True(t, result.IsError)
+				if tt.errorContains != "" {
+					assert.Contains(t, getTextContentFromResult(t, result), tt.errorContains)
+				}
+			} else {
+				assert.False(t, result.IsError)
+				if tt.checkResult != nil {
+					tt.checkResult(t, getTextContentFromResult(t, result))
+				}
 			}
 		})
 	}

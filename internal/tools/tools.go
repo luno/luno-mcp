@@ -38,8 +38,9 @@ const (
 	ListTransactionsToolID = "list_transactions"
 	GetTransactionToolID   = "get_transaction"
 	ListTradesToolID       = "list_trades"
-	GetCandlesToolID       = "get_candles"
-	GetMarketsInfoToolID   = "get_markets_info"
+	GetCandlesToolID          = "get_candles"
+	GetMarketsInfoToolID      = "get_markets_info"
+	GetAvailableMarketsToolID = "get_available_markets"
 )
 
 // ===== Balance Tools =====
@@ -438,6 +439,12 @@ func HandleCreateOrder(cfg *config.Config) server.ToolHandlerFunc {
 
 		order, err := cfg.LunoClient.PostLimitOrder(ctx, createReq)
 		if err != nil {
+			if luno.IsErrorCode(err, "ErrMarketNotAllowed") {
+				return mcp.NewToolResultError(fmt.Sprintf(
+					"Market %s is not enabled for your account.\n\n"+
+						"Use the get_available_markets tool to see which markets your account can trade.",
+					pair)), nil
+			}
 			// If the order fails despite our validation, provide detailed error information
 			errorMsg := fmt.Sprintf("Failed to create limit order: %v\n\n"+
 				"Here's what we know about this market:\n%s\n\n"+
@@ -794,4 +801,41 @@ func normalizeCurrencyPair(pair string) string {
 	slog.Debug("Currency pair normalization", "original", originalPair, "normalized", pair)
 
 	return pair
+}
+
+// ===== Available Markets Tool =====
+
+// NewGetAvailableMarketsTool creates a tool that returns the markets the authenticated
+// account is permitted to trade, using the dedicated account_markets endpoint.
+func NewGetAvailableMarketsTool() mcp.Tool {
+	return mcp.NewTool(
+		GetAvailableMarketsToolID,
+		mcp.WithDescription("Returns the list of markets that your account is permitted to trade. "+
+			"Unlike get_markets_info (which shows global market status), this tool returns only the "+
+			"markets your account can access. Use this before create_order to avoid "+
+			"ErrMarketNotAllowed errors."),
+	)
+}
+
+// HandleGetAvailableMarkets handles the get_available_markets tool.
+// It calls the dedicated GET /api/exchange/1/account_markets endpoint which returns
+// only the markets the authenticated account is permitted to trade.
+func HandleGetAvailableMarkets(cfg *config.Config) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
+
+		res, err := cfg.LunoClient.GetAccountMarkets(ctx, &luno.GetAccountMarketsRequest{})
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting account markets", err), nil
+		}
+
+		resultJSON, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal account markets: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(string(resultJSON)), nil
+	}
 }
