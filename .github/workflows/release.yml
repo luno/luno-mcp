@@ -64,14 +64,14 @@ jobs:
         working-directory: dist
         run: sha256sum *.tar.gz > checksums.txt
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           files: dist/*
           generate_release_notes: true
 
       - name: Trigger Homebrew tap update
         continue-on-error: true
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
         with:
           token: ${{ secrets.HOMEBREW_TAP_PAT }}
           repository: luno/luno-mcp-homebrew
