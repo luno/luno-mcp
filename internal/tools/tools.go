@@ -806,7 +806,7 @@ func normalizeCurrencyPair(pair string) string {
 // ===== Available Markets Tool =====
 
 // NewGetAvailableMarketsTool creates a tool that returns the markets the authenticated
-// account is permitted to trade, using the dedicated account_markets endpoint.
+// account is permitted to trade.
 func NewGetAvailableMarketsTool() mcp.Tool {
 	return mcp.NewTool(
 		GetAvailableMarketsToolID,
@@ -818,8 +818,6 @@ func NewGetAvailableMarketsTool() mcp.Tool {
 }
 
 // HandleGetAvailableMarkets handles the get_available_markets tool.
-// It calls the dedicated GET /api/exchange/1/account_markets endpoint which returns
-// only the markets the authenticated account is permitted to trade.
 func HandleGetAvailableMarkets(cfg *config.Config) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		if !cfg.IsAuthenticated {
