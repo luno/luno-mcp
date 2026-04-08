@@ -151,26 +151,25 @@ docker run --env-file .env -p 8080:8080 luno-mcp --transport sse --sse-address 0
 
 ## Release Process
 
-Releases are triggered by pushing a semver tag. This kicks off two automated publishing workflows.
+Releases are fully automated and run on a daily schedule (9am UTC). A release is only created if there are new commits since the last tag — so merging to `main` is all that's needed. No manual tagging required.
 
-### Publishing a release
-
-```bash
-git tag v0.3.0
-git push origin v0.3.0
-```
+The workflow can also be triggered manually via the [Actions tab](https://github.com/luno/luno-mcp/actions/workflows/release.yml) if you need to release outside the schedule.
 
 ### What happens automatically
 
-#### Docker image (`docker-publish.yml`)
-
-Builds and pushes a multi-arch image (`linux/amd64`, `linux/arm64`) to `ghcr.io/luno/luno-mcp`. Tags the image with the semver version and `latest`.
-
 #### Binaries + Homebrew (`release.yml`)
 
-1. Builds binaries for `darwin/arm64`, `darwin/amd64`, `linux/amd64`, and `linux/arm64`
-2. Creates a GitHub release with the binaries as `.tar.gz` assets and a `checksums.txt`
-3. Dispatches a `new-release` event to the [luno/luno-mcp-homebrew](https://github.com/luno/luno-mcp-homebrew) tap repo, which auto-updates the formula with the new version and SHA256s
+Runs daily at 9am UTC (or on manual trigger):
+
+1. Checks for commits since the last release tag — skips if there are none
+2. Bumps the patch version and creates a new tag (e.g. `v0.2.1` → `v0.2.2`)
+3. Builds binaries for `darwin/arm64`, `darwin/amd64`, `linux/amd64`, and `linux/arm64`
+4. Creates a GitHub release with the binaries as `.tar.gz` assets and a `checksums.txt`
+5. Dispatches a `new-release` event to the [luno/luno-mcp-homebrew](https://github.com/luno/luno-mcp-homebrew) tap repo, which auto-updates the formula with the new version and SHA256s
+
+#### Docker image (`docker-publish.yml`)
+
+Triggers on pushes to `main` and on `v*` tags. Builds and pushes a multi-arch image (`linux/amd64`, `linux/arm64`) to `ghcr.io/luno/luno-mcp`, tagged with the semver version and `latest`.
 
 ### Prerequisites for the release workflow
 
