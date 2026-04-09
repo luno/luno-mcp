@@ -1,6 +1,6 @@
 module github.com/luno/luno-mcp
 
-go 1.25.0
+go 1.26.0
 
 tool github.com/vektra/mockery/v3
 
