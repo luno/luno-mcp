@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"strconv"
 	"testing"
 	"time"
@@ -1158,9 +1159,7 @@ func TestHandleListTrades(t *testing.T) {
 // Helper function to create mock MCP requests
 func createMockRequest(params map[string]any) mcp.CallToolRequest {
 	arguments := make(map[string]any)
-	for k, v := range params {
-		arguments[k] = v
-	}
+	maps.Copy(arguments, params)
 
 	return mcp.CallToolRequest{
 		Params: mcp.CallToolParams{
