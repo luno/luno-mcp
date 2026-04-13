@@ -167,6 +167,41 @@ sudo mv luno-mcp /usr/local/bin/
 </details>
 
 <details>
+<summary>Homebrew (macOS)</summary>
+
+Install via [Homebrew](https://brew.sh) using the [luno/luno-mcp-homebrew](https://github.com/luno/luno-mcp-homebrew) tap:
+
+```bash
+brew tap luno/luno-mcp-homebrew
+brew install luno-mcp
+```
+
+Then configure your MCP client:
+
+```json
+{
+  "mcpServers": {
+    "luno": {
+      "command": "luno-mcp",
+      "args": ["--transport", "stdio"],
+      "env": {
+        "LUNO_API_KEY_ID": "YOUR_API_KEY_ID",
+        "LUNO_API_SECRET": "YOUR_API_SECRET"
+      }
+    }
+  }
+}
+```
+
+Or with Claude Code:
+
+```bash
+claude mcp add luno -e LUNO_API_KEY_ID=YOUR_API_KEY_ID -e LUNO_API_SECRET=YOUR_API_SECRET -- luno-mcp
+```
+
+</details>
+
+<details>
 <summary>Docker</summary>
 
 Use the standard config above, or run directly:
