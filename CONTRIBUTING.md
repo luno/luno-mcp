@@ -151,25 +151,30 @@ docker run --env-file .env -p 8080:8080 luno-mcp --transport sse --sse-address 0
 
 ## Release Process
 
-Releases are fully automated and run on a daily schedule (9am UTC). A release is only created if there are new commits since the last tag — so merging to `main` is all that's needed. No manual tagging required.
+Releases are triggered by publishing a GitHub Release. The release tag determines the version — no other configuration is needed.
 
-The workflow can also be triggered manually via the [Actions tab](https://github.com/luno/luno-mcp/actions/workflows/release.yml) if you need to release outside the schedule.
+### Steps to release
+
+1. Go to [Releases](https://github.com/luno/luno-mcp/releases) and click **Draft a new release**
+2. Enter the new version as the tag (e.g. `v1.3.0`), targeting `main`
+3. Write release notes describing the changes
+4. Click **Publish release**
 
 ### What happens automatically
 
+Publishing a release fires two workflows in parallel:
+
 #### Binaries + Homebrew (`release.yml`)
 
-Runs daily at 9am UTC (or on manual trigger):
+Triggered by the `release: published` event:
 
-1. Checks for commits since the last release tag — skips if there are none
-2. Bumps the patch version and creates a new tag (e.g. `v0.2.1` → `v0.2.2`)
-3. Builds binaries for `darwin/arm64`, `darwin/amd64`, `linux/amd64`, and `linux/arm64`
-4. Creates a GitHub release with the binaries as `.tar.gz` assets and `checksums.txt`
-5. Dispatches a `new-release` event to the [luno/luno-mcp-homebrew](https://github.com/luno/luno-mcp-homebrew) tap repo, which auto-updates the formula with the new version and SHA256s
+1. Builds binaries for `darwin/arm64`, `darwin/amd64`, `linux/amd64`, and `linux/arm64`
+2. Uploads the binaries as `.tar.gz` assets and a `checksums.txt` to the release
+3. Dispatches a `new-release` event to the [luno/luno-mcp-homebrew](https://github.com/luno/luno-mcp-homebrew) tap repo, which auto-updates the formula with the new version and SHA256s
 
 #### Docker image (`docker-publish.yml`)
 
-Triggers on pushes to `main` and on `v*` tags. Builds and pushes a multi-arch image (`linux/amd64`, `linux/arm64`) to `ghcr.io/luno/luno-mcp`, tagged with the semver version and `latest`.
+Triggered by the `v*` tag push that GitHub creates when the release is published. Builds and pushes a multi-arch image (`linux/amd64`, `linux/arm64`) to `ghcr.io/luno/luno-mcp`, tagged with the semver version and `latest`.
 
 ### Prerequisites for the release workflow
 
@@ -180,7 +185,7 @@ The `HOMEBREW_TAP_PAT` secret must be set in this repo's GitHub settings. It sho
 Once a release is published, users can install with:
 
 ```bash
-brew tap luno/luno-mcp-homebrew
+brew tap luno/luno-mcp
 brew install luno-mcp
 ```
 
