@@ -57,7 +57,8 @@ elif command -v sha256sum >/dev/null 2>&1; then
 elif command -v shasum >/dev/null 2>&1; then
   grep "${TARBALL}" checksums.txt | shasum -a 256 -c --quiet
 else
-  echo "warning: no sha256 tool found, skipping checksum verification" >&2
+  echo "error: no SHA-256 verification tool found; refusing to install unverified download" >&2
+  exit 1
 fi
 
 tar xzf "${TARBALL}"
@@ -68,8 +69,9 @@ INSTALL_DIR="$DEFAULT_INSTALL_DIR"
 
 if [ -w "$INSTALL_DIR" ]; then
   mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
-elif command -v sudo >/dev/null 2>&1; then
+elif command -v sudo >/dev/null 2>&1 && sudo -v; then
   echo "Installing to ${INSTALL_DIR} (requires sudo)..."
+  sudo mkdir -p "$INSTALL_DIR"
   sudo mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
   sudo chmod +x "${INSTALL_DIR}/${BINARY}"
 else
@@ -85,60 +87,47 @@ echo "${BINARY} v${VERSION} installed to ${INSTALL_DIR}/${BINARY}"
 # --- Configure Claude Desktop (macOS only, if API keys are provided) ---
 
 if [ "$OS" = "darwin" ] && [ -n "$LUNO_API_KEY_ID" ] && [ -n "$LUNO_API_SECRET" ]; then
-  if [ -f "$CLAUDE_DESKTOP_CONFIG" ]; then
-    # Merge into existing config using Python if available, otherwise append a warning
-    if command -v python3 >/dev/null 2>&1; then
-      python3 - <<PYEOF
+  if command -v python3 >/dev/null 2>&1; then
+    mkdir -p "$(dirname "$CLAUDE_DESKTOP_CONFIG")"
+    CLAUDE_DESKTOP_CONFIG="$CLAUDE_DESKTOP_CONFIG" \
+    LUNO_API_KEY_ID="$LUNO_API_KEY_ID" \
+    LUNO_API_SECRET="$LUNO_API_SECRET" \
+    LUNO_API_DOMAIN="${LUNO_API_DOMAIN:-}" \
+    ALLOW_WRITE_OPERATIONS="${ALLOW_WRITE_OPERATIONS:-}" \
+    INSTALL_PATH="${INSTALL_DIR}/${BINARY}" \
+    python3 - <<'PYEOF'
 import json, os
-p = os.path.expanduser("$CLAUDE_DESKTOP_CONFIG")
-with open(p) as f:
-    c = json.load(f)
+
+p = os.environ["CLAUDE_DESKTOP_CONFIG"]
+try:
+    with open(p) as f:
+        c = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    c = {}
+
 env = {
-    "LUNO_API_KEY_ID": "$LUNO_API_KEY_ID",
-    "LUNO_API_SECRET": "$LUNO_API_SECRET"
+    "LUNO_API_KEY_ID": os.environ["LUNO_API_KEY_ID"],
+    "LUNO_API_SECRET": os.environ["LUNO_API_SECRET"],
 }
-if "$LUNO_API_DOMAIN":
-    env["LUNO_API_DOMAIN"] = "$LUNO_API_DOMAIN"
-if "$ALLOW_WRITE_OPERATIONS":
-    env["ALLOW_WRITE_OPERATIONS"] = "$ALLOW_WRITE_OPERATIONS"
+if os.environ.get("LUNO_API_DOMAIN"):
+    env["LUNO_API_DOMAIN"] = os.environ["LUNO_API_DOMAIN"]
+if os.environ.get("ALLOW_WRITE_OPERATIONS"):
+    env["ALLOW_WRITE_OPERATIONS"] = os.environ["ALLOW_WRITE_OPERATIONS"]
+
 c.setdefault("mcpServers", {})["luno"] = {
-    "command": "$BINARY",
+    "command": os.environ["INSTALL_PATH"],
     "args": ["--transport", "stdio"],
-    "env": env
+    "env": env,
 }
+
 with open(p, "w") as f:
     json.dump(c, f, indent=2)
     f.write("\n")
 PYEOF
-      echo "Claude Desktop configured."
-    else
-      echo "warning: python3 not found — Claude Desktop config not updated automatically" >&2
-    fi
+    echo "Claude Desktop configured. Restart Claude Desktop to apply changes."
   else
-    mkdir -p "$(dirname "$CLAUDE_DESKTOP_CONFIG")"
-    # Build env block, adding optional vars only when set
-    ENV_BLOCK="        \"LUNO_API_KEY_ID\": \"${LUNO_API_KEY_ID}\",
-        \"LUNO_API_SECRET\": \"${LUNO_API_SECRET}\""
-    [ -n "$LUNO_API_DOMAIN" ]         && ENV_BLOCK="${ENV_BLOCK},
-        \"LUNO_API_DOMAIN\": \"${LUNO_API_DOMAIN}\""
-    [ -n "$ALLOW_WRITE_OPERATIONS" ]  && ENV_BLOCK="${ENV_BLOCK},
-        \"ALLOW_WRITE_OPERATIONS\": \"${ALLOW_WRITE_OPERATIONS}\""
-    cat > "$CLAUDE_DESKTOP_CONFIG" <<EOF
-{
-  "mcpServers": {
-    "luno": {
-      "command": "${BINARY}",
-      "args": ["--transport", "stdio"],
-      "env": {
-${ENV_BLOCK}
-      }
-    }
-  }
-}
-EOF
-    echo "Claude Desktop config created."
+    echo "warning: python3 not found — install Python 3 and re-run to configure Claude Desktop" >&2
   fi
-  echo "Restart Claude Desktop to apply changes."
 fi
 
 # --- Print next steps if keys were not provided ---
@@ -147,8 +136,8 @@ if [ -z "$LUNO_API_KEY_ID" ] || [ -z "$LUNO_API_SECRET" ]; then
   echo ""
   echo "To configure Claude Desktop, re-run with your Luno API credentials:"
   echo ""
-  echo "  LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> \\"
-  echo "    curl -fsSL https://raw.githubusercontent.com/${REPO}/main/claude-desktop-install.sh | sh"
+  echo "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/claude-desktop-install.sh | \\"
+  echo "    LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> sh"
   echo ""
   echo "Get API keys from: https://www.luno.com/wallet/security/api"
 fi
