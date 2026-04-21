@@ -102,8 +102,13 @@ p = os.environ["CLAUDE_DESKTOP_CONFIG"]
 try:
     with open(p) as f:
         c = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
+except FileNotFoundError:
     c = {}
+except json.JSONDecodeError as e:
+    raise SystemExit(f"error: {p} contains invalid JSON ({e}); fix it before re-running")
+
+if not isinstance(c, dict):
+    raise SystemExit(f"error: {p} must contain a JSON object at the top level")
 
 env = {
     "LUNO_API_KEY_ID": os.environ["LUNO_API_KEY_ID"],
@@ -114,19 +119,27 @@ if os.environ.get("LUNO_API_DOMAIN"):
 if os.environ.get("ALLOW_WRITE_OPERATIONS"):
     env["ALLOW_WRITE_OPERATIONS"] = os.environ["ALLOW_WRITE_OPERATIONS"]
 
-c.setdefault("mcpServers", {})["luno"] = {
+mcp_servers = c.setdefault("mcpServers", {})
+if not isinstance(mcp_servers, dict):
+    raise SystemExit(f"error: mcpServers in {p} must be a JSON object")
+
+mcp_servers["luno"] = {
     "command": os.environ["INSTALL_PATH"],
     "args": ["--transport", "stdio"],
     "env": env,
 }
 
-with open(p, "w") as f:
+fd = os.open(p, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(fd, "w") as f:
     json.dump(c, f, indent=2)
     f.write("\n")
+os.chmod(p, 0o600)
 PYEOF
     echo "Claude Desktop configured. Restart Claude Desktop to apply changes."
   else
-    echo "warning: python3 not found — install Python 3 and re-run to configure Claude Desktop" >&2
+    echo "error: python3 is required to configure Claude Desktop but was not found" >&2
+    echo "Install Python 3 from https://www.python.org and re-run." >&2
+    exit 1
   fi
 fi
 
@@ -136,7 +149,7 @@ if [ -z "$LUNO_API_KEY_ID" ] || [ -z "$LUNO_API_SECRET" ]; then
   echo ""
   echo "To configure Claude Desktop, re-run with your Luno API credentials:"
   echo ""
-  echo "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/claude-desktop-install.sh | \\"
+  echo "  curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/${REPO}/main/claude-desktop-install.sh | \\"
   echo "    LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> sh"
   echo ""
   echo "Get API keys from: https://www.luno.com/wallet/security/api"
