@@ -48,9 +48,11 @@ trap 'rm -rf "$TMP"' EXIT
 curl -fsSL "${BASE_URL}/${TARBALL}"      -o "${TMP}/${TARBALL}"
 curl -fsSL "${BASE_URL}/checksums.txt"   -o "${TMP}/checksums.txt"
 
-# Verify checksum using whichever tool is available
+# Verify checksum — macOS ships BSD sha256sum which lacks -c; use shasum there
 cd "$TMP"
-if command -v sha256sum >/dev/null 2>&1; then
+if [ "$OS" = "darwin" ] && command -v shasum >/dev/null 2>&1; then
+  grep "${TARBALL}" checksums.txt | shasum -a 256 -c --quiet
+elif command -v sha256sum >/dev/null 2>&1; then
   grep "${TARBALL}" checksums.txt | sha256sum -c --quiet
 elif command -v shasum >/dev/null 2>&1; then
   grep "${TARBALL}" checksums.txt | shasum -a 256 -c --quiet
@@ -91,13 +93,18 @@ import json, os
 p = os.path.expanduser("$CLAUDE_DESKTOP_CONFIG")
 with open(p) as f:
     c = json.load(f)
+env = {
+    "LUNO_API_KEY_ID": "$LUNO_API_KEY_ID",
+    "LUNO_API_SECRET": "$LUNO_API_SECRET"
+}
+if "$LUNO_API_DOMAIN":
+    env["LUNO_API_DOMAIN"] = "$LUNO_API_DOMAIN"
+if "$ALLOW_WRITE_OPERATIONS":
+    env["ALLOW_WRITE_OPERATIONS"] = "$ALLOW_WRITE_OPERATIONS"
 c.setdefault("mcpServers", {})["luno"] = {
     "command": "$BINARY",
     "args": ["--transport", "stdio"],
-    "env": {
-        "LUNO_API_KEY_ID": "$LUNO_API_KEY_ID",
-        "LUNO_API_SECRET": "$LUNO_API_SECRET"
-    }
+    "env": env
 }
 with open(p, "w") as f:
     json.dump(c, f, indent=2)
@@ -109,6 +116,13 @@ PYEOF
     fi
   else
     mkdir -p "$(dirname "$CLAUDE_DESKTOP_CONFIG")"
+    # Build env block, adding optional vars only when set
+    ENV_BLOCK="        \"LUNO_API_KEY_ID\": \"${LUNO_API_KEY_ID}\",
+        \"LUNO_API_SECRET\": \"${LUNO_API_SECRET}\""
+    [ -n "$LUNO_API_DOMAIN" ]         && ENV_BLOCK="${ENV_BLOCK},
+        \"LUNO_API_DOMAIN\": \"${LUNO_API_DOMAIN}\""
+    [ -n "$ALLOW_WRITE_OPERATIONS" ]  && ENV_BLOCK="${ENV_BLOCK},
+        \"ALLOW_WRITE_OPERATIONS\": \"${ALLOW_WRITE_OPERATIONS}\""
     cat > "$CLAUDE_DESKTOP_CONFIG" <<EOF
 {
   "mcpServers": {
@@ -116,8 +130,7 @@ PYEOF
       "command": "${BINARY}",
       "args": ["--transport", "stdio"],
       "env": {
-        "LUNO_API_KEY_ID": "${LUNO_API_KEY_ID}",
-        "LUNO_API_SECRET": "${LUNO_API_SECRET}"
+${ENV_BLOCK}
       }
     }
   }
@@ -135,7 +148,7 @@ if [ -z "$LUNO_API_KEY_ID" ] || [ -z "$LUNO_API_SECRET" ]; then
   echo "To configure Claude Desktop, re-run with your Luno API credentials:"
   echo ""
   echo "  LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> \\"
-  echo "    curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | sh"
+  echo "    curl -fsSL https://raw.githubusercontent.com/${REPO}/main/claude-desktop-install.sh | sh"
   echo ""
   echo "Get API keys from: https://www.luno.com/wallet/security/api"
 fi

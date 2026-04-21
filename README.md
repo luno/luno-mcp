@@ -57,7 +57,14 @@ claude mcp add luno -e LUNO_API_KEY_ID=YOUR_API_KEY_ID -e LUNO_API_SECRET=YOUR_A
 <details>
 <summary>Claude Desktop</summary>
 
-Add to your `claude_desktop_config.json` ([setup guide](https://modelcontextprotocol.io/quickstart/user)) using the standard config above.
+One-line install and configure (macOS):
+
+```bash
+LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> \
+  curl -fsSL https://raw.githubusercontent.com/luno/luno-mcp/main/claude-desktop-install.sh | sh
+```
+
+Or add the standard config to your `claude_desktop_config.json` manually ([setup guide](https://modelcontextprotocol.io/quickstart/user)).
 
 </details>
 
@@ -269,7 +276,14 @@ claude mcp add luno -e LUNO_API_KEY_ID=YOUR_API_KEY_ID -e LUNO_API_SECRET=YOUR_A
 <details>
 <summary>Claude Desktop</summary>
 
-Add to your `claude_desktop_config.json` ([setup guide](https://modelcontextprotocol.io/quickstart/user)) using the standard config above.
+One-line install and configure (macOS):
+
+```bash
+LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> \
+  curl -fsSL https://raw.githubusercontent.com/luno/luno-mcp/main/claude-desktop-install.sh | sh
+```
+
+Or add the standard config to your `claude_desktop_config.json` manually ([setup guide](https://modelcontextprotocol.io/quickstart/user)).
 
 </details>
 

@@ -64,6 +64,19 @@ LUNO_API_DOMAIN=api.staging.luno.com  # Optional: Override API Domain
 
 **Note**: When using the MCP server with VS Code or other MCP clients, credentials are provided through the client's input system. The `.env` file and environment variables are only needed for direct development when running `go run ./cmd/server` or the binary directly.
 
+### Testing with Claude Desktop (staging)
+
+To install and configure Claude Desktop against the staging API with write operations enabled:
+
+```bash
+LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> \
+  LUNO_API_DOMAIN=api.staging.luno.com \
+  ALLOW_WRITE_OPERATIONS=true \
+  curl -fsSL https://raw.githubusercontent.com/luno/luno-mcp/main/claude-desktop-install.sh | sh
+```
+
+Restart Claude Desktop after running this. To revert to production, re-run without the staging env vars.
+
 ### Running the server
 
 #### Standard I/O mode (default)
