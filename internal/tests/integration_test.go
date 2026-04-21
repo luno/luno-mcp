@@ -85,7 +85,7 @@ func TestMCPServerWithListOrders(t *testing.T) {
 	request := mcp.CallToolRequest{}
 	request.Method = "callTool"
 	request.Params.Name = tools.ListOrdersToolID
-	request.Params.Arguments = make(map[string]interface{})
+	request.Params.Arguments = make(map[string]any)
 
 	// Call the tool handler directly
 	result, err := listOrdersHandler(ctx, request)
