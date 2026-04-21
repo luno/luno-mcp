@@ -64,6 +64,19 @@ LUNO_API_DOMAIN=api.staging.luno.com  # Optional: Override API Domain
 
 **Note**: When using the MCP server with VS Code or other MCP clients, credentials are provided through the client's input system. The `.env` file and environment variables are only needed for direct development when running `go run ./cmd/server` or the binary directly.
 
+### Testing with Claude Desktop (staging)
+
+To install and configure Claude Desktop against the staging API with write operations enabled:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/luno/luno-mcp/main/claude-desktop-install.sh | \
+  LUNO_API_KEY_ID=<key> LUNO_API_SECRET=<secret> \
+  LUNO_API_DOMAIN=api.staging.luno.com \
+  ALLOW_WRITE_OPERATIONS=true sh
+```
+
+Restart Claude Desktop after running this. To revert to production, re-run without the staging env vars.
+
 ### Running the server
 
 #### Standard I/O mode (default)
@@ -170,7 +183,7 @@ Triggered by the `release: published` event:
 
 1. Builds binaries for `darwin/arm64`, `darwin/amd64`, `linux/amd64`, and `linux/arm64`
 2. Uploads the binaries as `.tar.gz` assets and a `checksums.txt` to the release
-3. Dispatches a `new-release` event to the [luno/luno-mcp-homebrew](https://github.com/luno/luno-mcp-homebrew) tap repo, which auto-updates the formula with the new version and SHA256s
+3. Dispatches a `new-release` event to the [luno/homebrew-luno-mcp](https://github.com/luno/homebrew-luno-mcp) tap repo, which auto-updates the formula with the new version and SHA256s
 
 #### Docker image (`docker-publish.yml`)
 
@@ -178,7 +191,7 @@ Triggered by the `v*` tag push that GitHub creates when the release is published
 
 ### Prerequisites for the release workflow
 
-The `HOMEBREW_TAP_PAT` secret must be set in this repo's GitHub settings. It should be a fine-grained PAT with `Contents: write` permission on the `luno/luno-mcp-homebrew` repo.
+The `HOMEBREW_TAP_PAT` secret must be set in this repo's GitHub settings. It should be a fine-grained PAT with `Contents: write` permission on the `luno/homebrew-luno-mcp` repo.
 
 ### Installing via Homebrew (macOS)
 
