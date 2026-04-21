@@ -25,7 +25,7 @@ esac
 # --- Resolve version ---
 
 if [ -z "$VERSION" ]; then
-  VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+  VERSION="$(curl --proto '=https' --tlsv1.2 -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
     | grep '"tag_name"' \
     | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
   if [ -z "$VERSION" ]; then
@@ -45,8 +45,8 @@ echo "Installing ${BINARY} v${VERSION} (${OS}/${ARCH})..."
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-curl -fsSL "${BASE_URL}/${TARBALL}"      -o "${TMP}/${TARBALL}"
-curl -fsSL "${BASE_URL}/checksums.txt"   -o "${TMP}/checksums.txt"
+curl --proto '=https' --tlsv1.2 -fsSL "${BASE_URL}/${TARBALL}"    -o "${TMP}/${TARBALL}"
+curl --proto '=https' --tlsv1.2 -fsSL "${BASE_URL}/checksums.txt" -o "${TMP}/checksums.txt"
 
 # Verify checksum — macOS ships BSD sha256sum which lacks -c; use shasum there
 cd "$TMP"
