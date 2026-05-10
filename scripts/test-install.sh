@@ -33,14 +33,32 @@ esac
 BINARY="luno-mcp"
 TARBALL="${BINARY}-${OS}-${ARCH}.tar.gz"
 
+# --- Expected install location (mirrors installer logic) ---
+# On CI runners /usr/local/bin is often writable, so the installer goes there
+# instead of falling back to ~/.local/bin. Detect this upfront so verification
+# and cleanup both agree on where the binary should land.
+
+if [ -w "/usr/local/bin" ]; then
+  EXPECTED_INSTALL_PATH="/usr/local/bin/$BINARY"
+  USED_FALLBACK=false
+else
+  USED_FALLBACK=true
+fi
+
 # --- Temp dirs ---
 
 TMP_RELEASE="$(mktemp -d)"
 TMP_HOME="$(mktemp -d)"
 TMP_BIN="$(mktemp -d)"
 
+if [ "$USED_FALLBACK" = "true" ]; then
+  EXPECTED_INSTALL_PATH="$TMP_HOME/.local/bin/$BINARY"
+fi
+
 cleanup() {
   rm -rf "$TMP_RELEASE" "$TMP_HOME" "$TMP_BIN"
+  # Remove system binary if the installer wrote it there (common on CI runners)
+  [ "$USED_FALLBACK" = "false" ] && rm -f "/usr/local/bin/$BINARY" || true
 }
 trap cleanup EXIT
 
@@ -96,19 +114,20 @@ VERSION="0.0.0-test" \
 
 # --- Verify ---
 
-INSTALL_PATH="$TMP_HOME/.local/bin/$BINARY"
-if [ ! -x "$INSTALL_PATH" ]; then
-  echo "FAIL: binary not installed at $INSTALL_PATH" >&2
+if [ ! -x "$EXPECTED_INSTALL_PATH" ]; then
+  echo "FAIL: binary not installed at $EXPECTED_INSTALL_PATH" >&2
   exit 1
 fi
-echo "PASS: binary installed at $INSTALL_PATH"
+echo "PASS: binary installed at $EXPECTED_INSTALL_PATH"
 
-PROFILE="$TMP_HOME/.profile"
-if ! grep -qF ".local/bin" "$PROFILE" 2>/dev/null; then
-  echo "FAIL: PATH not added to $PROFILE" >&2
-  exit 1
+if [ "$USED_FALLBACK" = "true" ]; then
+  PROFILE="$TMP_HOME/.profile"
+  if ! grep -qF ".local/bin" "$PROFILE" 2>/dev/null; then
+    echo "FAIL: PATH not added to $PROFILE" >&2
+    exit 1
+  fi
+  echo "PASS: PATH updated in $PROFILE"
 fi
-echo "PASS: PATH updated in $PROFILE"
 
 # --- Cleanup handled by trap ---
 

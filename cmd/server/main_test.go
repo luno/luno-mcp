@@ -257,6 +257,26 @@ func TestSetupLogger(t *testing.T) {
 	}
 }
 
+func TestLogWriter(t *testing.T) {
+	tests := []struct {
+		name      string
+		transport string
+		expected  *os.File
+	}{
+		{name: "stdio uses stderr", transport: "stdio", expected: os.Stderr},
+		{name: "sse uses stdout", transport: "sse", expected: os.Stdout},
+		{name: "streamable-http uses stdout", transport: "streamable-http", expected: os.Stdout},
+		{name: "unknown transport falls back to stdout", transport: "unknown", expected: os.Stdout},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := logWriter(tt.transport)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
 func TestCreateMCPServer(t *testing.T) {
 	// Mock configuration - we'll need to set environment variables for this test
 	t.Setenv("LUNO_API_KEY_ID", "test_key")

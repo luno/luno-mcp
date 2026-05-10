@@ -48,7 +48,7 @@ func Load(domainOverride, appName, appVersion string) (*Config, error) {
 	apiKeyID := os.Getenv(strings.TrimSpace(EnvLunoAPIKeyID))
 	apiKeySecret := os.Getenv(strings.TrimSpace(EnvLunoAPIKeySecret))
 
-	slog.Debug("Loaded API credentials", "key_id", maskValue(apiKeyID), "key_id_len", len(apiKeyID), "secret_len", len(apiKeySecret))
+	slog.Debug("Loaded API credentials", "api_key_present", apiKeyID != "", "api_secret_present", apiKeySecret != "")
 
 	lunoClient := luno.NewClient()
 	trimmedAppName := strings.TrimSpace(appName)
