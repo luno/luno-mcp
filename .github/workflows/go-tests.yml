@@ -29,3 +29,23 @@ jobs:
 
       - name: Run tests
         run: go test -v ./...
+
+  install-script:
+    name: Install Script Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Run install script test
+        run: sh scripts/test-install.sh

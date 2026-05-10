@@ -75,7 +75,26 @@ mkdir -p "$INSTALL_DIR"
 mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
 chmod +x "${INSTALL_DIR}/${BINARY}"
 if [ -n "${INSTALL_FALLBACK:-}" ]; then
-  echo "note: ${DEFAULT_INSTALL_DIR} is not writable; installed to ${INSTALL_DIR} — add it to your PATH if not already present"
+  echo "note: ${DEFAULT_INSTALL_DIR} is not writable; installed to ${INSTALL_DIR}"
+  case "${SHELL:-}" in
+    */zsh)  SHELL_PROFILE="${HOME}/.zshrc" ;;
+    */bash)
+      # macOS bash login shells read .bash_profile; Linux interactive shells read .bashrc
+      if [ "$OS" = "darwin" ]; then
+        SHELL_PROFILE="${HOME}/.bash_profile"
+      else
+        SHELL_PROFILE="${HOME}/.bashrc"
+      fi
+      ;;
+    *)      SHELL_PROFILE="${HOME}/.profile" ;;
+  esac
+  if ! echo ":${PATH}:" | grep -q ":${INSTALL_DIR}:"; then
+    if ! grep -qF "${INSTALL_DIR}" "${SHELL_PROFILE}" 2>/dev/null; then
+      printf '\nexport PATH="%s:$PATH"\n' "${INSTALL_DIR}" >> "${SHELL_PROFILE}"
+      echo "note: added ${INSTALL_DIR} to PATH in ${SHELL_PROFILE}"
+    fi
+    echo "note: run 'source ${SHELL_PROFILE}' or open a new terminal for PATH to take effect"
+  fi
 fi
 
 echo "${BINARY} v${VERSION} installed to ${INSTALL_DIR}/${BINARY}"

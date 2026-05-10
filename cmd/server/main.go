@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"os"
@@ -73,19 +74,28 @@ func parseFlags() CliFlags {
 	}
 }
 
+// logWriter returns the appropriate writer for log output. In stdio mode stdout
+// is reserved for JSON-RPC, so logs must go to stderr.
+func logWriter(transportType string) io.Writer {
+	if transportType == "stdio" {
+		return os.Stderr
+	}
+	return os.Stdout
+}
+
 // setupLogger creates and configures the basic console logger
-func setupLogger(logLevel string) *slog.Logger {
+func setupLogger(logLevel string, w io.Writer) *slog.Logger {
 	level := parseLogLevel(logLevel)
-	consoleHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level})
+	consoleHandler := slog.NewTextHandler(w, &slog.HandlerOptions{Level: level})
 	logger := slog.New(consoleHandler)
 	slog.SetDefault(logger)
 	return logger
 }
 
 // setupEnhancedLogger creates an enhanced logger with MCP notification capability
-func setupEnhancedLogger(mcpServer *mcpserver.MCPServer, logLevel string) {
+func setupEnhancedLogger(mcpServer *mcpserver.MCPServer, logLevel string, w io.Writer) {
 	level := parseLogLevel(logLevel)
-	consoleHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level})
+	consoleHandler := slog.NewTextHandler(w, &slog.HandlerOptions{Level: level})
 	mcpHandler := logging.NewMCPNotificationHandler(mcpServer, level)
 	multiHandler := logging.NewMultiHandler(consoleHandler, mcpHandler)
 	enhancedLogger := slog.New(multiHandler)
@@ -135,25 +145,20 @@ func main() {
 	// Parse command line flags
 	flags := parseFlags()
 
-	// Set up basic logger first
-	setupLogger(flags.LogLevel)
+	logOut := logWriter(flags.TransportType)
+	setupLogger(flags.LogLevel, logOut)
 
-	// Load configuration
 	cfg, err := config.Load(flags.LunoDomain, appName, appVersion)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// CLI flag takes precedence for enabling write operations
 	if flags.AllowWriteOperations {
 		cfg.AllowWriteOperations = true
 	}
 
-	// Create MCP server with logging hooks
 	mcpServer := createMCPServer(cfg)
-
-	// Now enhance the logger with MCP notification capability
-	setupEnhancedLogger(mcpServer, flags.LogLevel)
+	setupEnhancedLogger(mcpServer, flags.LogLevel, logOut)
 
 	// Setup signal handling for graceful shutdown
 	ctx, cancel := setupSignalHandling()
