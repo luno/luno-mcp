@@ -67,20 +67,16 @@ tar xzf "${TARBALL}"
 
 INSTALL_DIR="$DEFAULT_INSTALL_DIR"
 
-if [ -w "$INSTALL_DIR" ]; then
-  mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
-elif command -v sudo >/dev/null 2>&1 && sudo -v; then
-  echo "Installing to ${INSTALL_DIR} (requires sudo)..."
-  sudo mkdir -p "$INSTALL_DIR"
-  sudo mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
-  sudo chmod +x "${INSTALL_DIR}/${BINARY}"
-else
+if [ ! -w "$INSTALL_DIR" ]; then
   INSTALL_DIR="${HOME}/.local/bin"
-  mkdir -p "$INSTALL_DIR"
-  mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
-  echo "note: installed to ${INSTALL_DIR} — add it to your PATH if not already present"
+  INSTALL_FALLBACK=1
 fi
-chmod +x "${INSTALL_DIR}/${BINARY}" 2>/dev/null || true
+mkdir -p "$INSTALL_DIR"
+mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
+chmod +x "${INSTALL_DIR}/${BINARY}"
+if [ -n "${INSTALL_FALLBACK:-}" ]; then
+  echo "note: ${DEFAULT_INSTALL_DIR} is not writable; installed to ${INSTALL_DIR} — add it to your PATH if not already present"
+fi
 
 echo "${BINARY} v${VERSION} installed to ${INSTALL_DIR}/${BINARY}"
 
