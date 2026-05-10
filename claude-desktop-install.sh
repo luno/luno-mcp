@@ -5,12 +5,13 @@ REPO="luno/luno-mcp"
 BINARY="luno-mcp"
 DEFAULT_INSTALL_DIR="/usr/local/bin"
 CLAUDE_DESKTOP_CONFIG="${HOME}/Library/Application Support/Claude/claude_desktop_config.json"
+readonly OS_DARWIN="darwin"
 
 # --- Detect platform ---
 
 OS="$(uname -s)"
 case "$OS" in
-  Darwin) OS="darwin" ;;
+  Darwin) OS="$OS_DARWIN" ;;
   Linux)  OS="linux" ;;
   *)      echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
@@ -50,7 +51,7 @@ curl --proto '=https' --tlsv1.2 -fsSL "${BASE_URL}/checksums.txt" -o "${TMP}/che
 
 # Verify checksum — macOS ships BSD sha256sum which lacks -c; use shasum there
 cd "$TMP"
-if [ "$OS" = "darwin" ] && command -v shasum >/dev/null 2>&1; then
+if [ "$OS" = "$OS_DARWIN" ] && command -v shasum >/dev/null 2>&1; then
   grep "${TARBALL}" checksums.txt | shasum -a 256 -c --quiet
 elif command -v sha256sum >/dev/null 2>&1; then
   grep "${TARBALL}" checksums.txt | sha256sum -c --quiet
@@ -80,7 +81,7 @@ if [ -n "${INSTALL_FALLBACK:-}" ]; then
     */zsh)  SHELL_PROFILE="${HOME}/.zshrc" ;;
     */bash)
       # macOS bash login shells read .bash_profile; Linux interactive shells read .bashrc
-      if [ "$OS" = "darwin" ]; then
+      if [ "$OS" = "$OS_DARWIN" ]; then
         SHELL_PROFILE="${HOME}/.bash_profile"
       else
         SHELL_PROFILE="${HOME}/.bashrc"
@@ -101,7 +102,7 @@ echo "${BINARY} v${VERSION} installed to ${INSTALL_DIR}/${BINARY}"
 
 # --- Configure Claude Desktop (macOS only, if API keys are provided) ---
 
-if [ "$OS" = "darwin" ] && [ -n "$LUNO_API_KEY_ID" ] && [ -n "$LUNO_API_SECRET" ]; then
+if [ "$OS" = "$OS_DARWIN" ] && [ -n "$LUNO_API_KEY_ID" ] && [ -n "$LUNO_API_SECRET" ]; then
   if command -v python3 >/dev/null 2>&1; then
     mkdir -p "$(dirname "$CLAUDE_DESKTOP_CONFIG")"
     CLAUDE_DESKTOP_CONFIG="$CLAUDE_DESKTOP_CONFIG" \
