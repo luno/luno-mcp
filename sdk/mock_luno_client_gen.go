@@ -967,3 +967,71 @@ func (_c *MockLunoClient_SetDebug_Call) RunAndReturn(run func(bool)) *MockLunoCl
 	_c.Call.Return(run)
 	return _c
 }
+
+// Convert provides a mock function for the type MockLunoClient
+func (_mock *MockLunoClient) Convert(ctx context.Context, req *luno.ConvertRequest) (*luno.ConvertResponse, error) {
+	ret := _mock.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Convert")
+	}
+
+	var r0 *luno.ConvertResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.ConvertRequest) (*luno.ConvertResponse, error)); ok {
+		return returnFunc(ctx, req)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *luno.ConvertRequest) *luno.ConvertResponse); ok {
+		r0 = returnFunc(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*luno.ConvertResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *luno.ConvertRequest) error); ok {
+		r1 = returnFunc(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockLunoClient_Convert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Convert'
+type MockLunoClient_Convert_Call struct {
+	*mock.Call
+}
+
+// Convert is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *luno.ConvertRequest
+func (_e *MockLunoClient_Expecter) Convert(ctx interface{}, req interface{}) *MockLunoClient_Convert_Call {
+	return &MockLunoClient_Convert_Call{Call: _e.mock.On("Convert", ctx, req)}
+}
+
+func (_c *MockLunoClient_Convert_Call) Run(run func(ctx context.Context, req *luno.ConvertRequest)) *MockLunoClient_Convert_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *luno.ConvertRequest
+		if args[1] != nil {
+			arg1 = args[1].(*luno.ConvertRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockLunoClient_Convert_Call) Return(convertResponse *luno.ConvertResponse, err error) *MockLunoClient_Convert_Call {
+	_c.Call.Return(convertResponse, err)
+	return _c
+}
+
+func (_c *MockLunoClient_Convert_Call) RunAndReturn(run func(ctx context.Context, req *luno.ConvertRequest) (*luno.ConvertResponse, error)) *MockLunoClient_Convert_Call {
+	_c.Call.Return(run)
+	return _c
+}
