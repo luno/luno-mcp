@@ -566,7 +566,11 @@ func HandleConvert(cfg *config.Config) server.ToolHandlerFunc {
 
 		idempotencyKey := request.GetString("idempotency_key", "")
 		if idempotencyKey == "" {
-			idempotencyKey = uuid.New().String()
+			uid, err := uuid.NewRandom()
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("Failed to generate idempotency key: %v", err)), nil
+			}
+			idempotencyKey = uid.String()
 		}
 
 		result, err := cfg.LunoClient.Convert(ctx, &luno.ConvertRequest{
