@@ -2,121 +2,53 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
+## Development commands
 
-### Building and Testing
-- `make build` - Build the luno-mcp binary
-- `make test` - Run all tests
-- `make clean` - Clean build files and remove binary
-- `make install` - Install binary to GOBIN path
-- `make pre-commit` - Install pre-commit hooks
+- `make build` - Build the `luno-mcp` binary into the repo root
+- `make test` - Run all tests (`go test ./...`)
+- `go test ./internal/tools/... -run TestHandleGetBalances` - Run a single test or package
+- `make run-stdio` / `make run-sse` / `make run-streamable-http` - Run server with each transport
+- `make install` - Install binary to `$GOBIN`
+- `make pre-commit` - Install pre-commit hooks (requires `gofumpt` installed separately: `go install mvdan.cc/gofumpt@latest`)
+- `go tool mockery` - Regenerate mocks (mockery is declared as a Go tool in `go.mod`, not invoked standalone). Config is in `.mockery.yml`.
 
-### Running the Server
-- `make run-stdio` - Run server in stdio mode
-- `make run-sse` - Run server in SSE mode on localhost:8080
-- `make run-streamable-http` - Run server in Streamable HTTP mode on localhost:8080 (default transport)
-- `go run ./cmd/server --transport sse --sse-address localhost:8080` - Custom SSE configuration
-- `go run ./cmd/server --transport streamable-http --sse-address localhost:8080` - Custom Streamable HTTP configuration
+Pre-commit runs `go-vet-mod`, `go-imports`, `gofumpt`, `go-mod-tidy-repo`, `go-test-repo-mod`, plus YAML/whitespace/EOF checks and a script-test for `claude-desktop-install.sh`. These run on every commit - run `pre-commit run --all-files` to validate before pushing.
 
-### Pre-commit Hooks
-Pre-commit hooks are required and run automatically on commit:
-- Go formatting (gofumpt, goimports)
-- Go vet checks
-- Go mod tidy
-- YAML validation
-- Trailing whitespace removal
-- End-of-file fixing
+## Architecture
 
-Install with: `pre-commit install`
+This is an MCP server wrapping the Luno crypto exchange API. Three layers matter:
 
-## Project Architecture
+**`sdk/luno_client.go`** defines the `LunoClient` interface that all tool/resource handlers depend on. The real `*luno.Client` satisfies it via a compile-time check; `sdk/mock_luno_client_gen.go` is the mockery-generated test double. **Never call `luno.Client` methods directly from `internal/` - go through the interface** so tests can substitute the mock.
 
-This is a Model Context Protocol (MCP) server providing access to the Luno cryptocurrency exchange API. The architecture follows Go standard project layout:
+**`internal/config`** owns `Config`, which carries the `LunoClient`, an `IsAuthenticated` flag, and `AllowWriteOperations`. `config.Load()` decides authentication mode by inspecting env vars at startup - if `LUNO_API_KEY_ID`/`LUNO_API_SECRET` are absent, the server runs in unauthenticated mode and authenticated tools (`get_balances`, `list_orders`, etc.) return `ErrAPICredentialsRequired` rather than failing at registration time. CLI `--allow-write-operations` overrides the env var.
 
-### Core Structure
-- `cmd/server/` - Main application entry point with CLI flags and server startup
-- `internal/config/` - Configuration handling (environment variables, API credentials)
-- `internal/server/` - MCP server setup, transport handling (stdio/SSE)
-- `internal/tools/` - MCP tools implementation for Luno API interactions
-- `internal/resources/` - MCP resources for data exposure
-- `internal/logging/` - Enhanced logging with MCP notification support
-- `internal/tests/` - Testing utilities
+**`internal/server/server.go`** wires everything: `NewMCPServer` registers resources and tools, then `ServeStdio` / `ServeSSE` / `ServeStreamableHTTP` start the chosen transport. Key design choice in `registerTools`: write tools (`create_order`, `cancel_order`) are **always registered with the server**, but when `AllowWriteOperations=false` they are bound to `HandleWriteOperationDisabled()` instead of their real handlers. This means MCP clients can see the tools exist and discover how to enable them, rather than the tools silently disappearing. Don't change this pattern when adding new write tools.
 
-### Key Dependencies
-- `github.com/mark3labs/mcp-go` - MCP protocol implementation
-- `github.com/luno/luno-go` - Official Luno API client
-- `github.com/joho/godotenv` - Environment file loading
-- `github.com/vektra/mockery/v3` - Mock generation (declared as Go tool)
+**Tool/resource split** follows MCP semantics: `internal/resources/` exposes data via URIs (`luno://wallets`, `luno://transactions`, `luno://accounts/{id}`); `internal/tools/` exposes actions (the table in README.md is the canonical list). Each tool file pairs a `NewXTool()` constructor (schema/description) with a `HandleX(cfg)` factory that closes over `*config.Config`.
 
-## Configuration and Environment
+**Transport-specific stdout handling**: in stdio mode, stdout is reserved for JSON-RPC frames, so `cmd/server/main.go:logWriter` routes slog output to stderr. Any new logging must go through `slog` (never `fmt.Println` to stdout) or it will corrupt the protocol stream.
 
-### API Credentials Setup
-For development, set credentials via:
+**Dual logging via `internal/logging`**: `setupEnhancedLogger` wraps a console `slog.TextHandler` and an `MCPNotificationHandler` in a `MultiHandler`, so every `slog.Info`/`slog.Debug` call emits both a local log line *and* an MCP `notifications/message` to the client. The enhanced handler can only be installed after the MCP server exists, which is why the basic logger is set up first and replaced post-`createMCPServer`.
 
-**Environment variables:**
-```bash
-export LUNO_API_KEY_ID=your_key
-export LUNO_API_SECRET=your_secret
-export LUNO_API_DEBUG=true  # Optional
-export LUNO_API_DOMAIN=api.staging.luno.com  # Optional
-```
+## Conventions
 
-**Or `.env` file (gitignored):**
-Copy `.env.example` to `.env` and populate values.
+- Commit messages: `"<package>[/<subpackage>]: <Capital description>"` in present tense (e.g. `"config: Trim spaces when parsing env vars"`, `"tools: Add validation for trading pairs before order creation"`).
+- Tests: table-driven, spaces (not underscores) in test names, `.EXPECT()` (not `.On()`) on mocks, testify or stdlib assertions. Cyclomatic complexity in `*_test.go` is not enforced.
+- Error handling: return or log, never both. If ignoring an error, write `_ =` explicitly.
+- Tool error responses: prefer `mcp.NewToolResultError(...)` with a user-actionable message (see the `ErrAPICredentialsRequired`, `ErrWriteOperationDisabled` constants in `internal/tools/tools.go` for the established phrasing) rather than returning a raw Go error.
 
-**Note:** MCP clients (VS Code, etc.) provide credentials through input prompts, not environment variables.
+## Configuration
 
-### Available Command-Line Flags
-- `--transport` - Transport type (stdio, sse, or streamable-http; default: streamable-http)
-- `--sse-address` - Server address for SSE and Streamable HTTP transports (default: localhost:8080)
-- `--domain` - Luno API domain override
-- `--log-level` - Logging level (debug, info, warn, error, default: info)
-- `--allow-write-operations` - Enable write operations (create_order, cancel_order); also via ALLOW_WRITE_OPERATIONS env var
+API credentials and runtime options:
 
-## Code Conventions
+- `LUNO_API_KEY_ID`, `LUNO_API_SECRET` - credentials; absence triggers unauthenticated mode
+- `LUNO_API_DOMAIN` - override default `api.luno.com` (e.g. `api.staging.luno.com`)
+- `LUNO_API_DEBUG` - enable luno-go client debug mode
+- `ALLOW_WRITE_OPERATIONS` - same effect as `--allow-write-operations` flag
+- `.env` and `../.env` are auto-loaded at startup via godotenv (dev convenience only; MCP clients pass credentials via their own input mechanism)
 
-### Go Standards (from copilot-instructions.md)
-- Follow Go idioms and best practices
-- Always handle errors properly - either return them or log them, never both
-- Rarely ignore errors; if you do, explicitly use `_ =`
-- Use simple, readable code over clever solutions
-- Don't worry about cyclomatic complexity in `*_test.go` files
+CLI flags: `--transport` (stdio/sse/streamable-http, default `streamable-http`), `--sse-address` (default `localhost:8080`), `--domain`, `--log-level` (debug/info/warn/error), `--allow-write-operations`.
 
-### Testing Requirements
-- Write table-driven tests with descriptive names using spaces (not underscores)
-- Test happy path, boundary cases, and error conditions
-- Use testify assertions or standard library
-- Use `.EXPECT()` rather than `.On()` for mock expectations
-- Run mockery as `go tool mockery` (not standalone `mockery`)
+## Release
 
-### MCP-Specific Guidelines
-- Separate concerns between resources (data exposure) and tools (actions)
-- Implement proper input validation for client requests
-- Follow mcp-go library patterns
-- Provide helpful error messages to users
-- Handle API rate limiting and failures gracefully
-
-### Commit Message Format
-Follow pattern: `"<package>/<optional_subpackage>: <Capital description>"` in present tense.
-
-Examples:
-- `"config: Trim spaces when parsing env vars"`
-- `"logging: Use mcp logging package so it's not interpreted as errors"`
-- `"tools: Add validation for trading pairs before order creation"`
-
-### Security Best Practices
-- Never store or log API credentials
-- Validate all inputs, especially from external sources
-- Don't log sensitive information (keys, full API responses)
-- Only log information needed for debugging
-- Consider edge cases and failure modes
-
-## Docker Support
-
-Build: `docker build -t luno-mcp .`
-
-Run with environment file: `docker run --env-file .env luno-mcp`
-
-SSE mode: `docker run --env-file .env -p 8080:8080 luno-mcp --transport sse --sse-address 0.0.0.0:8080`
-
-Streamable HTTP mode: `docker run --env-file .env -p 8080:8080 luno-mcp --transport streamable-http --sse-address 0.0.0.0:8080`
+Releases are cut by publishing a GitHub Release on `main` with a `vX.Y.Z` tag. Two workflows fire in parallel: `release.yml` builds darwin/linux × arm64/amd64 binaries and dispatches an update event to [luno/homebrew-luno-mcp](https://github.com/luno/homebrew-luno-mcp); `docker-publish.yml` builds a multi-arch image to `ghcr.io/luno/luno-mcp` tagged with the version and `latest`. The `HOMEBREW_TAP_PAT` secret must be present for the Homebrew step.
