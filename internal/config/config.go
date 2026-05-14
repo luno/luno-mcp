@@ -51,8 +51,10 @@ func Load(domainOverride, appName, appVersion string) (*Config, error) {
 	fmt.Printf("LUNO_API_SECRET value: %s (length: %d)\n", maskValue(apiKeySecret), len(apiKeySecret))
 
 	lunoClient := luno.NewClient()
-	if appName != "" && appVersion != "" {
-		lunoClient.SetUserAgentSuffix(fmt.Sprintf("%s/%s", appName, appVersion))
+	trimmedAppName := strings.TrimSpace(appName)
+	trimmedAppVersion := strings.TrimSpace(appVersion)
+	if trimmedAppName != "" && trimmedAppVersion != "" {
+		lunoClient.SetUserAgentSuffix(fmt.Sprintf("%s/%s", trimmedAppName, trimmedAppVersion))
 	}
 
 	cfg := &Config{
