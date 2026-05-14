@@ -58,5 +58,3 @@ require (
 	golang.org/x/tools v0.42.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/luno/luno-go => github.com/allank/luno-go v0.0.0-20260513172933-770fd8973eae

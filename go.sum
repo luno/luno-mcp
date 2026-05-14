@@ -1,5 +1,3 @@
-github.com/allank/luno-go v0.0.0-20260513172933-770fd8973eae h1:omj4LmwuGF0agfKIocT7e4YsXHLVMyeyb1aq+IcedwM=
-github.com/allank/luno-go v0.0.0-20260513172933-770fd8973eae/go.mod h1:czQPrlH+el3/hT9eDKQDBD8uqR0XSXex9n1VjsBa6O4=
 github.com/brunoga/deep v1.3.1 h1:bSrL6FhAZa6JlVv4vsi7Hg8SLwroDb1kgDERRVipBCo=
 github.com/brunoga/deep v1.3.1/go.mod h1:GDV6dnXqn80ezsLSZ5Wlv1PdKAWAO4L5PnKYtv2dgaI=
 github.com/clipperhouse/uax29/v2 v2.2.0 h1:ChwIKnQN3kcZteTXMgb1wztSgaU+ZemkgWdohwgs8tY=
