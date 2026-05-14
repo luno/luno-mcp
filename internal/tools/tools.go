@@ -563,6 +563,9 @@ func HandleConvert(cfg *config.Config) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid amount format: %v", err)), nil
 		}
+		if amount.Sign() <= 0 {
+			return mcp.NewToolResultError("amount must be positive"), nil
+		}
 
 		idempotencyKey := request.GetString("idempotency_key", "")
 		if idempotencyKey == "" {

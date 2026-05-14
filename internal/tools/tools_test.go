@@ -1658,6 +1658,30 @@ func TestHandleConvert(t *testing.T) {
 			errorContains:   "Invalid amount",
 		},
 		{
+			name: "zero amount",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "0",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "amount must be positive",
+		},
+		{
+			name: "negative amount",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "-50.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "amount must be positive",
+		},
+		{
 			name: "API error",
 			requestParams: map[string]any{
 				"source_account_id": "123",
