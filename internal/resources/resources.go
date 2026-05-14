@@ -205,7 +205,7 @@ func HandleAccountTemplate(cfg *config.Config) server.ResourceTemplateHandlerFun
 		}
 
 		// Create a combined result with account details and transactions
-		result := map[string]interface{}{
+		result := map[string]any{
 			"account":      account,
 			"transactions": transactions.Transactions,
 		}
