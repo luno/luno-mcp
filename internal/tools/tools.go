@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/luno/luno-go"
 	"github.com/luno/luno-go/decimal"
 	"github.com/luno/luno-mcp/internal/config"
@@ -40,6 +41,7 @@ const (
 	ListTradesToolID       = "list_trades"
 	GetCandlesToolID       = "get_candles"
 	GetMarketsInfoToolID   = "get_markets_info"
+	ConvertToolID          = "convert"
 )
 
 // ===== Balance Tools =====
@@ -490,6 +492,91 @@ func HandleCancelOrder(cfg *config.Config) server.ToolHandlerFunc {
 		})
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to cancel order: %v", err)), nil
+		}
+
+		resultJSON, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal result: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(string(resultJSON)), nil
+	}
+}
+
+// NewConvertTool creates a new tool for converting between currencies
+func NewConvertTool() mcp.Tool {
+	return mcp.NewTool(
+		ConvertToolID,
+		mcp.WithDescription("Instantly convert between two currencies (e.g. ZAR to ZARU) using the Luno broker."+writeOperationNotice),
+		mcp.WithString(
+			"source_account_id",
+			mcp.Required(),
+			mcp.Description("Account ID to convert funds from"),
+		),
+		mcp.WithString(
+			"target_account_id",
+			mcp.Required(),
+			mcp.Description("Account ID to receive converted funds"),
+		),
+		mcp.WithString(
+			"amount",
+			mcp.Required(),
+			mcp.Description("Decimal amount to convert (e.g. \"100.00\")"),
+		),
+		mcp.WithString(
+			"idempotency_key",
+			mcp.Description("Unique key to prevent duplicate conversions; auto-generated UUID if omitted"),
+		),
+	)
+}
+
+// HandleConvert handles the convert tool
+func HandleConvert(cfg *config.Config) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if !cfg.IsAuthenticated {
+			return mcp.NewToolResultError(ErrAPICredentialsRequired), nil
+		}
+
+		sourceAccountIDStr, err := request.RequireString("source_account_id")
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting source_account_id from request", err), nil
+		}
+		sourceAccountID, err := strconv.ParseInt(sourceAccountIDStr, 10, 64)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid source account ID format: %v", err)), nil
+		}
+
+		targetAccountIDStr, err := request.RequireString("target_account_id")
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting target_account_id from request", err), nil
+		}
+		targetAccountID, err := strconv.ParseInt(targetAccountIDStr, 10, 64)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid target account ID format: %v", err)), nil
+		}
+
+		amountStr, err := request.RequireString("amount")
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("getting amount from request", err), nil
+		}
+		amount, err := decimal.NewFromString(amountStr)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid amount format: %v", err)), nil
+		}
+
+		idempotencyKey := request.GetString("idempotency_key", "")
+		if idempotencyKey == "" {
+			idempotencyKey = uuid.New().String()
+		}
+
+		result, err := cfg.LunoClient.Convert(ctx, &luno.ConvertRequest{
+			SourceAccountId: sourceAccountID,
+			TargetAccountId: targetAccountID,
+			Amount:          amount,
+			IdempotencyKey:  idempotencyKey,
+		})
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to convert: %v", err)), nil
 		}
 
 		resultJSON, err := json.MarshalIndent(result, "", "  ")
