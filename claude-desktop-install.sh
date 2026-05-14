@@ -25,10 +25,12 @@ esac
 # --- Resolve version ---
 
 if [ -z "$VERSION" ]; then
-  VERSION="$(curl --proto '=https' --tlsv1.2 -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    | grep '"tag_name"' \
-    | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
-  if [ -z "$VERSION" ]; then
+  # Resolve via the github.com redirect rather than api.github.com - the API rate-limits
+  # unauthenticated callers to 60/hour per IP, the redirect has no such limit.
+  VERSION="$(curl --proto '=https' --tlsv1.2 -fsSLI -o /dev/null -w '%{url_effective}' \
+    "https://github.com/${REPO}/releases/latest" \
+    | sed 's|.*/tag/||')"
+  if [ -z "$VERSION" ] || [ "$VERSION" = "https://github.com/${REPO}/releases/latest" ]; then
     echo "error: could not determine latest version" >&2
     exit 1
   fi
