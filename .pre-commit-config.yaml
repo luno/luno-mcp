@@ -22,3 +22,12 @@ repos:
 
       # Go Test
       - id: go-test-repo-mod
+
+  - repo: local
+    hooks:
+      - id: test-install-script
+        name: Test install script
+        language: system
+        entry: sh scripts/test-install.sh
+        files: ^claude-desktop-install\.sh$
+        pass_filenames: false

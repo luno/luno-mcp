@@ -247,12 +247,32 @@ func TestSetupLogger(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logger := setupLogger(tt.logLevel)
+			logger := setupLogger(tt.logLevel, os.Stderr)
 			assert.NotNil(t, logger)
 
 			// Verify the logger was set as default
 			defaultLogger := slog.Default()
 			assert.NotNil(t, defaultLogger)
+		})
+	}
+}
+
+func TestLogWriter(t *testing.T) {
+	tests := []struct {
+		name      string
+		transport string
+		expected  *os.File
+	}{
+		{name: "stdio uses stderr", transport: "stdio", expected: os.Stderr},
+		{name: "sse uses stdout", transport: "sse", expected: os.Stdout},
+		{name: "streamable-http uses stdout", transport: "streamable-http", expected: os.Stdout},
+		{name: "unknown transport falls back to stdout", transport: "unknown", expected: os.Stdout},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := logWriter(tt.transport)
+			assert.Equal(t, tt.expected, got)
 		})
 	}
 }
@@ -386,7 +406,7 @@ func TestMainFunctionFlow(t *testing.T) {
 	})
 
 	t.Run("setup logger", func(t *testing.T) {
-		logger := setupLogger(testLogLevelInfo)
+		logger := setupLogger(testLogLevelInfo, os.Stderr)
 		assert.NotNil(t, logger)
 	})
 
@@ -464,7 +484,7 @@ func TestSetupEnhancedLogger(t *testing.T) {
 			defer slog.SetDefault(originalLogger)
 
 			// Test setupEnhancedLogger - this function sets the default logger
-			setupEnhancedLogger(mcpServer, tt.logLevel)
+			setupEnhancedLogger(mcpServer, tt.logLevel, os.Stderr)
 
 			// Verify the logger was set as default
 			newLogger := slog.Default()

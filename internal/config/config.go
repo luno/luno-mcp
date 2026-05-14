@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -47,8 +48,7 @@ func Load(domainOverride, appName, appVersion string) (*Config, error) {
 	apiKeyID := os.Getenv(strings.TrimSpace(EnvLunoAPIKeyID))
 	apiKeySecret := os.Getenv(strings.TrimSpace(EnvLunoAPIKeySecret))
 
-	fmt.Printf("LUNO_API_KEY_ID value: %s (length: %d)\n", maskValue(apiKeyID), len(apiKeyID))
-	fmt.Printf("LUNO_API_SECRET value: %s (length: %d)\n", maskValue(apiKeySecret), len(apiKeySecret))
+	slog.Debug("Loaded API credentials", "api_key_present", apiKeyID != "", "api_secret_present", apiKeySecret != "")
 
 	lunoClient := luno.NewClient()
 	trimmedAppName := strings.TrimSpace(appName)
@@ -61,47 +61,41 @@ func Load(domainOverride, appName, appVersion string) (*Config, error) {
 		LunoClient: lunoClient,
 	}
 
-	// Set domain - first check command line override, then env var, then default
 	domain := DefaultLunoDomain
 
-	// Check for environment variable override
 	if envDomain := os.Getenv(strings.TrimSpace(EnvLunoAPIDomain)); envDomain != "" {
 		domain = envDomain
-		fmt.Printf("Using domain from environment variable: %s\n", domain)
+		slog.Debug("Using domain from environment variable", "domain", domain)
 	}
 
-	// Command line override takes precedence if provided
 	if domainOverride != "" {
 		domain = domainOverride
-		fmt.Printf("Using domain from command line: %s\n", domain)
+		slog.Debug("Using domain from command line flag", "domain", domain)
 	}
 
 	if domain != DefaultLunoDomain {
 		cfg.LunoClient.SetBaseURL(fmt.Sprintf("https://%s", domain))
 	}
 
-	// Only set authentication if both API Key ID and Secret are provided
 	if apiKeyID != "" && apiKeySecret != "" {
 		err := cfg.LunoClient.SetAuth(apiKeyID, apiKeySecret)
 		if err != nil {
 			return nil, fmt.Errorf("failed to set Luno API credentials: %w", err)
 		}
 		cfg.IsAuthenticated = true
-		fmt.Println("Luno client authenticated with provided API credentials.")
+		slog.Info("Luno client authenticated with provided API credentials")
 	} else {
 		cfg.IsAuthenticated = false
-		fmt.Println("Luno API credentials not found. Operating in unauthenticated mode.")
+		slog.Info("Luno API credentials not found, operating in unauthenticated mode")
 	}
 
 	debugMode := parseBoolEnv(EnvLunoAPIDebug)
-	if debugMode {
-		fmt.Println("Debug mode enabled via environment variable")
-	}
+	slog.Debug("Debug mode", "enabled", debugMode)
 	cfg.LunoClient.SetDebug(debugMode)
 
 	allowWriteOps := parseBoolEnv(EnvAllowWriteOperations)
 	if allowWriteOps {
-		fmt.Println("Write operations enabled via environment variable")
+		slog.Info("Write operations enabled via environment variable")
 	}
 	cfg.AllowWriteOperations = allowWriteOps
 	return cfg, nil

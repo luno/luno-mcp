@@ -5,12 +5,13 @@ REPO="luno/luno-mcp"
 BINARY="luno-mcp"
 DEFAULT_INSTALL_DIR="/usr/local/bin"
 CLAUDE_DESKTOP_CONFIG="${HOME}/Library/Application Support/Claude/claude_desktop_config.json"
+readonly OS_DARWIN="darwin"
 
 # --- Detect platform ---
 
 OS="$(uname -s)"
 case "$OS" in
-  Darwin) OS="darwin" ;;
+  Darwin) OS="$OS_DARWIN" ;;
   Linux)  OS="linux" ;;
   *)      echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
@@ -25,10 +26,12 @@ esac
 # --- Resolve version ---
 
 if [ -z "$VERSION" ]; then
-  VERSION="$(curl --proto '=https' --tlsv1.2 -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    | grep '"tag_name"' \
-    | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
-  if [ -z "$VERSION" ]; then
+  # Resolve via the github.com redirect rather than api.github.com - the API rate-limits
+  # unauthenticated callers to 60/hour per IP, the redirect has no such limit.
+  VERSION="$(curl --proto '=https' --tlsv1.2 -fsSLI -o /dev/null -w '%{url_effective}' \
+    "https://github.com/${REPO}/releases/latest" \
+    | sed 's|.*/tag/||')"
+  if [ -z "$VERSION" ] || [ "$VERSION" = "https://github.com/${REPO}/releases/latest" ]; then
     echo "error: could not determine latest version" >&2
     exit 1
   fi
@@ -50,7 +53,7 @@ curl --proto '=https' --tlsv1.2 -fsSL "${BASE_URL}/checksums.txt" -o "${TMP}/che
 
 # Verify checksum — macOS ships BSD sha256sum which lacks -c; use shasum there
 cd "$TMP"
-if [ "$OS" = "darwin" ] && command -v shasum >/dev/null 2>&1; then
+if [ "$OS" = "$OS_DARWIN" ] && command -v shasum >/dev/null 2>&1; then
   grep "${TARBALL}" checksums.txt | shasum -a 256 -c --quiet
 elif command -v sha256sum >/dev/null 2>&1; then
   grep "${TARBALL}" checksums.txt | sha256sum -c --quiet
@@ -75,14 +78,33 @@ mkdir -p "$INSTALL_DIR"
 mv "${BINARY}" "${INSTALL_DIR}/${BINARY}"
 chmod +x "${INSTALL_DIR}/${BINARY}"
 if [ -n "${INSTALL_FALLBACK:-}" ]; then
-  echo "note: ${DEFAULT_INSTALL_DIR} is not writable; installed to ${INSTALL_DIR} — add it to your PATH if not already present"
+  echo "note: ${DEFAULT_INSTALL_DIR} is not writable; installed to ${INSTALL_DIR}"
+  case "${SHELL:-}" in
+    */zsh)  SHELL_PROFILE="${HOME}/.zshrc" ;;
+    */bash)
+      # macOS bash login shells read .bash_profile; Linux interactive shells read .bashrc
+      if [ "$OS" = "$OS_DARWIN" ]; then
+        SHELL_PROFILE="${HOME}/.bash_profile"
+      else
+        SHELL_PROFILE="${HOME}/.bashrc"
+      fi
+      ;;
+    *)      SHELL_PROFILE="${HOME}/.profile" ;;
+  esac
+  if ! echo ":${PATH}:" | grep -q ":${INSTALL_DIR}:"; then
+    if ! grep -qF "${INSTALL_DIR}" "${SHELL_PROFILE}" 2>/dev/null; then
+      printf '\nexport PATH="%s:$PATH"\n' "${INSTALL_DIR}" >> "${SHELL_PROFILE}"
+      echo "note: added ${INSTALL_DIR} to PATH in ${SHELL_PROFILE}"
+    fi
+    echo "note: run 'source ${SHELL_PROFILE}' or open a new terminal for PATH to take effect"
+  fi
 fi
 
 echo "${BINARY} v${VERSION} installed to ${INSTALL_DIR}/${BINARY}"
 
 # --- Configure Claude Desktop (macOS only, if API keys are provided) ---
 
-if [ "$OS" = "darwin" ] && [ -n "$LUNO_API_KEY_ID" ] && [ -n "$LUNO_API_SECRET" ]; then
+if [ "$OS" = "$OS_DARWIN" ] && [ -n "$LUNO_API_KEY_ID" ] && [ -n "$LUNO_API_SECRET" ]; then
   if command -v python3 >/dev/null 2>&1; then
     mkdir -p "$(dirname "$CLAUDE_DESKTOP_CONFIG")"
     CLAUDE_DESKTOP_CONFIG="$CLAUDE_DESKTOP_CONFIG" \
