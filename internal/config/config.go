@@ -12,11 +12,11 @@ import (
 
 const (
 	// Environment variables
-	EnvLunoAPIKeyID          = "LUNO_API_KEY_ID"
-	EnvLunoAPIKeySecret      = "LUNO_API_SECRET"
-	EnvLunoAPIDomain         = "LUNO_API_DOMAIN"
-	EnvLunoAPIDebug          = "LUNO_API_DEBUG"
-	EnvAllowWriteOperations  = "ALLOW_WRITE_OPERATIONS"
+	EnvLunoAPIKeyID         = "LUNO_API_KEY_ID"
+	EnvLunoAPIKeySecret     = "LUNO_API_SECRET"
+	EnvLunoAPIDomain        = "LUNO_API_DOMAIN"
+	EnvLunoAPIDebug         = "LUNO_API_DEBUG"
+	EnvAllowWriteOperations = "ALLOW_WRITE_OPERATIONS"
 
 	// Default Luno API domain
 	DefaultLunoDomain = "api.luno.com"
@@ -43,15 +43,20 @@ func maskValue(s string) string {
 }
 
 // Load loads the configuration from environment variables
-func Load(domainOverride string) (*Config, error) {
+func Load(domainOverride, appName, appVersion string) (*Config, error) {
 	apiKeyID := os.Getenv(strings.TrimSpace(EnvLunoAPIKeyID))
 	apiKeySecret := os.Getenv(strings.TrimSpace(EnvLunoAPIKeySecret))
 
 	fmt.Printf("LUNO_API_KEY_ID value: %s (length: %d)\n", maskValue(apiKeyID), len(apiKeyID))
 	fmt.Printf("LUNO_API_SECRET value: %s (length: %d)\n", maskValue(apiKeySecret), len(apiKeySecret))
 
+	lunoClient := luno.NewClient()
+	if appName != "" && appVersion != "" {
+		lunoClient.SetUserAgentSuffix(fmt.Sprintf("%s/%s", appName, appVersion))
+	}
+
 	cfg := &Config{
-		LunoClient: luno.NewClient(),
+		LunoClient: lunoClient,
 	}
 
 	// Set domain - first check command line override, then env var, then default
