@@ -216,7 +216,7 @@ func TestLoad(t *testing.T) {
 			setEnvVar(EnvLunoAPIDebug, tc.debugEnv)
 			setEnvVar(EnvAllowWriteOperations, tc.allowWriteOpsEnv)
 
-			cfg, err := Load(tc.domainOverride)
+			cfg, err := Load(tc.domainOverride, "test-app", "1.0.0")
 
 			if tc.expectedError != "" {
 				if err == nil {

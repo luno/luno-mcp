@@ -132,5 +132,5 @@ func setupTestConfig(t *testing.T) (*config.Config, error) {
 		t.Log("Warning: No .env file found, using environment variables from system")
 	}
 
-	return config.Load("")
+	return config.Load("", "test-app", "1.0.0")
 }
