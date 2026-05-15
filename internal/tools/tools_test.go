@@ -1658,6 +1658,54 @@ func TestHandleConvert(t *testing.T) {
 			errorContains:   "Invalid amount",
 		},
 		{
+			name: "zero source account ID",
+			requestParams: map[string]any{
+				"source_account_id": "0",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid source account ID: must be a positive integer",
+		},
+		{
+			name: "negative source account ID",
+			requestParams: map[string]any{
+				"source_account_id": "-1",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid source account ID: must be a positive integer",
+		},
+		{
+			name: "zero target account ID",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "0",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid target account ID: must be a positive integer",
+		},
+		{
+			name: "negative target account ID",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "-1",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid target account ID: must be a positive integer",
+		},
+		{
 			name: "zero amount",
 			requestParams: map[string]any{
 				"source_account_id": "123",
@@ -1735,9 +1783,11 @@ func TestHandleConvert(t *testing.T) {
 				"amount":            "100.00",
 			},
 			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				expectedAmount := NewFromString(t, "100.00")
 				mockClient.EXPECT().Convert(context.Background(), mock.MatchedBy(func(req *luno.ConvertRequest) bool {
 					return req.SourceAccountId == 123 &&
 						req.TargetAccountId == 456 &&
+						req.Amount.Cmp(expectedAmount) == 0 &&
 						req.IdempotencyKey != ""
 				})).Return(&luno.ConvertResponse{
 					Id:                   "conv-002",

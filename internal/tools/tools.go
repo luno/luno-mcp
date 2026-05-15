@@ -545,6 +545,9 @@ func HandleConvert(cfg *config.Config) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid source account ID format: %v", err)), nil
 		}
+		if sourceAccountID <= 0 {
+			return mcp.NewToolResultError("Invalid source account ID: must be a positive integer"), nil
+		}
 
 		targetAccountIDStr, err := request.RequireString("target_account_id")
 		if err != nil {
@@ -553,6 +556,9 @@ func HandleConvert(cfg *config.Config) server.ToolHandlerFunc {
 		targetAccountID, err := strconv.ParseInt(targetAccountIDStr, 10, 64)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid target account ID format: %v", err)), nil
+		}
+		if targetAccountID <= 0 {
+			return mcp.NewToolResultError("Invalid target account ID: must be a positive integer"), nil
 		}
 
 		amountStr, err := request.RequireString("amount")
