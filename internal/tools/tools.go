@@ -532,7 +532,7 @@ func NewConvertTool() mcp.Tool {
 		mcp.WithTitleAnnotation("Convert between currencies"),
 		mcp.WithReadOnlyHintAnnotation(false),
 		mcp.WithDestructiveHintAnnotation(false),
-		mcp.WithIdempotentHintAnnotation(true),
+		mcp.WithIdempotentHintAnnotation(false),
 		mcp.WithOpenWorldHintAnnotation(true),
 		mcp.WithOutputSchema[luno.ConvertResponse](),
 		mcp.WithString(
