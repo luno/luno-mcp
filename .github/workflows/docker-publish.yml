@@ -37,7 +37,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
 
       # Smoke-test the stdio handshake before pushing - the multi-arch publish
       # below would otherwise ship a container that times out under mcp-proxy.
