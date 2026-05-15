@@ -78,15 +78,18 @@ func registerTools(server *mcpserver.MCPServer, cfg *config.Config) {
 	// When disabled, their handlers return an informative error explaining how to enable them.
 	createOrderTool := tools.NewCreateOrderTool()
 	cancelOrderTool := tools.NewCancelOrderTool()
+	convertTool := tools.NewConvertTool()
 
 	if cfg.AllowWriteOperations {
-		slog.Info("Write operations enabled - registering create_order and cancel_order tools")
+		slog.Info("Write operations enabled - registering create_order, cancel_order and convert tools")
 		server.AddTool(createOrderTool, tools.HandleCreateOrder(cfg))
 		server.AddTool(cancelOrderTool, tools.HandleCancelOrder(cfg))
+		server.AddTool(convertTool, tools.HandleConvert(cfg))
 	} else {
-		slog.Info("Write operations disabled - create_order and cancel_order tools registered as disabled")
+		slog.Info("Write operations disabled - create_order, cancel_order and convert tools registered as disabled")
 		server.AddTool(createOrderTool, tools.HandleWriteOperationDisabled())
 		server.AddTool(cancelOrderTool, tools.HandleWriteOperationDisabled())
+		server.AddTool(convertTool, tools.HandleWriteOperationDisabled())
 	}
 
 	listOrdersTool := tools.NewListOrdersTool()

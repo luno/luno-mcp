@@ -154,6 +154,12 @@ func TestToolCreation(t *testing.T) {
 			toolName: GetMarketsInfoToolID,
 			params:   []string{"pair"},
 		},
+		{
+			name:     "Convert tool",
+			toolFunc: NewConvertTool,
+			toolName: ConvertToolID,
+			params:   []string{"source_account_id", "target_account_id", "amount", "idempotency_key"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1589,6 +1595,243 @@ func TestHandleGetMarketsInfo(t *testing.T) {
 				}
 			} else {
 				assert.False(t, result.IsError)
+			}
+		})
+	}
+}
+
+func TestHandleConvert(t *testing.T) {
+	tests := []struct {
+		name            string
+		requestParams   map[string]any
+		mockSetup       func(*testing.T, *sdk.MockLunoClient)
+		isAuthenticated bool
+		expectedError   bool
+		errorContains   string
+	}{
+		{
+			name: "unauthenticated",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: false,
+			expectedError:   true,
+			errorContains:   ErrAPICredentialsRequired,
+		},
+		{
+			name: "invalid source account ID",
+			requestParams: map[string]any{
+				"source_account_id": "not-a-number",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid source account ID",
+		},
+		{
+			name: "invalid target account ID",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "not-a-number",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid target account ID",
+		},
+		{
+			name: "invalid amount",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "not-a-number",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid amount",
+		},
+		{
+			name: "zero source account ID",
+			requestParams: map[string]any{
+				"source_account_id": "0",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid source account ID: must be a positive integer",
+		},
+		{
+			name: "negative source account ID",
+			requestParams: map[string]any{
+				"source_account_id": "-1",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid source account ID: must be a positive integer",
+		},
+		{
+			name: "zero target account ID",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "0",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid target account ID: must be a positive integer",
+		},
+		{
+			name: "negative target account ID",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "-1",
+				"amount":            "100.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Invalid target account ID: must be a positive integer",
+		},
+		{
+			name: "zero amount",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "0",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "amount must be positive",
+		},
+		{
+			name: "negative amount",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "-50.00",
+			},
+			mockSetup:       func(t *testing.T, mockClient *sdk.MockLunoClient) {},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "amount must be positive",
+		},
+		{
+			name: "API error",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				mockClient.EXPECT().Convert(context.Background(), mock.MatchedBy(func(req *luno.ConvertRequest) bool {
+					expectedAmount := NewFromString(t, "100.00")
+					return req.SourceAccountId == 123 &&
+						req.TargetAccountId == 456 &&
+						req.Amount.Cmp(expectedAmount) == 0
+				})).Return(nil, errors.New(apiErrorStr))
+			},
+			isAuthenticated: true,
+			expectedError:   true,
+			errorContains:   "Failed to convert",
+		},
+		{
+			name: "successful convert with explicit idempotency key",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "100.00",
+				"idempotency_key":   "my-key-123",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				expectedAmount := NewFromString(t, "100.00")
+				mockClient.EXPECT().Convert(context.Background(), mock.MatchedBy(func(req *luno.ConvertRequest) bool {
+					return req.SourceAccountId == 123 &&
+						req.TargetAccountId == 456 &&
+						req.Amount.Cmp(expectedAmount) == 0 &&
+						req.IdempotencyKey == "my-key-123"
+				})).Return(&luno.ConvertResponse{
+					Id:                   "conv-001",
+					ConvertedAmount:      NewFromString(t, "95.00"),
+					SourceCurrency:       "ZAR",
+					TargetCurrency:       "ZARU",
+					SourceAccountBalance: NewFromString(t, "900.00"),
+					TargetAccountBalance: NewFromString(t, "195.00"),
+				}, nil)
+			},
+			isAuthenticated: true,
+			expectedError:   false,
+		},
+		{
+			name: "successful convert with auto-generated idempotency key",
+			requestParams: map[string]any{
+				"source_account_id": "123",
+				"target_account_id": "456",
+				"amount":            "100.00",
+			},
+			mockSetup: func(t *testing.T, mockClient *sdk.MockLunoClient) {
+				expectedAmount := NewFromString(t, "100.00")
+				mockClient.EXPECT().Convert(context.Background(), mock.MatchedBy(func(req *luno.ConvertRequest) bool {
+					return req.SourceAccountId == 123 &&
+						req.TargetAccountId == 456 &&
+						req.Amount.Cmp(expectedAmount) == 0 &&
+						req.IdempotencyKey != ""
+				})).Return(&luno.ConvertResponse{
+					Id:                   "conv-002",
+					ConvertedAmount:      NewFromString(t, "95.00"),
+					SourceCurrency:       "ZAR",
+					TargetCurrency:       "ZARU",
+					SourceAccountBalance: NewFromString(t, "900.00"),
+					TargetAccountBalance: NewFromString(t, "195.00"),
+				}, nil)
+			},
+			isAuthenticated: true,
+			expectedError:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := sdk.NewMockLunoClient(t)
+			tt.mockSetup(t, mockClient)
+
+			cfg := &config.Config{
+				LunoClient:      mockClient,
+				IsAuthenticated: tt.isAuthenticated,
+			}
+
+			handler := HandleConvert(cfg)
+			request := createMockRequest(tt.requestParams)
+
+			result, err := handler(context.Background(), request)
+
+			assert.NoError(t, err)
+			if tt.expectedError {
+				assert.True(t, result.IsError)
+				if tt.errorContains != "" {
+					errorText := getTextContentFromResult(t, result)
+					assert.Contains(t, errorText, tt.errorContains)
+				}
+			} else {
+				assert.False(t, result.IsError)
+				textContent := getTextContentFromResult(t, result)
+				assert.NotEmpty(t, textContent)
+				var response map[string]any
+				assert.NoError(t, json.Unmarshal([]byte(textContent), &response))
+				assert.NotEmpty(t, response["id"])
 			}
 		})
 	}

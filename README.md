@@ -234,7 +234,7 @@ docker run --rm \
 Optional environment variables:
 - `LUNO_API_DEBUG=true` — Enable debug logging
 - `LUNO_API_DOMAIN=api.staging.luno.com` — Override API domain
-- `ALLOW_WRITE_OPERATIONS=true` — Enable write operations (`create_order`, `cancel_order`)
+- `ALLOW_WRITE_OPERATIONS=true` — Enable write operations (`create_order`, `cancel_order`, `convert`)
 
 </details>
 
@@ -418,7 +418,7 @@ docker run --rm \
 Optional environment variables:
 - `LUNO_API_DEBUG=true` — Enable debug logging
 - `LUNO_API_DOMAIN=api.staging.luno.com` — Override API domain
-- `ALLOW_WRITE_OPERATIONS=true` — Enable write operations (`create_order`, `cancel_order`)
+- `ALLOW_WRITE_OPERATIONS=true` — Enable write operations (`create_order`, `cancel_order`, `convert`)
 
 </details>
 
@@ -445,6 +445,7 @@ Optional environment variables:
 | `list_orders`       | Trading             | List open orders                                  | ✅            | ❌    |
 | `list_transactions` | Transactions        | List transactions for an account                  | ✅            | ❌    |
 | `get_transaction`   | Transactions        | Get details of a specific transaction             | ✅            | ❌    |
+| `convert`           | Trading             | Instantly convert between two currencies          | ✅            | ✅    |
 
 ## Command-line options
 
@@ -452,7 +453,7 @@ Optional environment variables:
 - `--sse-address`: Address for SSE and Streamable HTTP transports (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)
-- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`). Also configurable via `ALLOW_WRITE_OPERATIONS` env var
+- `--allow-write-operations`: Enable write operations (`create_order`, `cancel_order`, `convert`). Also configurable via `ALLOW_WRITE_OPERATIONS` env var
 
 ## Examples
 
@@ -498,7 +499,7 @@ This tool requires API credentials that have access to your Luno account. Be cau
 
 ### Write Operations Control
 
-By default, the MCP server runs in **read-only mode** — `create_order` and `cancel_order` are not exposed. To enable them, set `ALLOW_WRITE_OPERATIONS` to `true`, `1`, or `yes`. See the config examples above for where to add this flag.
+By default, the MCP server runs in **read-only mode** — `create_order`, `cancel_order`, and `convert` are not exposed. To enable them, set `ALLOW_WRITE_OPERATIONS` to `true`, `1`, or `yes`. See the config examples above for where to add this flag.
 
 ### Best Practices for API Credentials
 

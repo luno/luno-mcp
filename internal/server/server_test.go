@@ -38,7 +38,7 @@ func TestNewMCPServer(t *testing.T) {
 			version:           testVersion1,
 			hooks:             nil,
 			allowWriteOps:     false,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 		},
 		{
 			name:              "creates server with write ops enabled",
@@ -46,14 +46,14 @@ func TestNewMCPServer(t *testing.T) {
 			version:           testVersion1,
 			hooks:             nil,
 			allowWriteOps:     true,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 		},
 		{
 			name:              "creates server with single hook",
 			srvName:           testServerWithHooks,
 			version:           testVersion2,
 			allowWriteOps:     false,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks {
 					h := &mcpserver.Hooks{}
@@ -69,7 +69,7 @@ func TestNewMCPServer(t *testing.T) {
 			srvName:           testServerMultiHooks,
 			version:           testVersion3,
 			allowWriteOps:     false,
-			expectedToolCount: 12,
+			expectedToolCount: 13,
 			hooks: []*mcpserver.Hooks{
 				func() *mcpserver.Hooks { // Corresponds to original OnAnyHookFunc
 					h := &mcpserver.Hooks{}
@@ -151,10 +151,12 @@ func TestWriteOperationsControl(t *testing.T) {
 				"%s: expected %s tool to always be registered", tc.name, tools.CreateOrderToolID)
 			require.Contains(t, registeredTools, tools.CancelOrderToolID,
 				"%s: expected %s tool to always be registered", tc.name, tools.CancelOrderToolID)
+			require.Contains(t, registeredTools, tools.ConvertToolID,
+				"%s: expected %s tool to always be registered", tc.name, tools.ConvertToolID)
 
 			// When disabled, verify the server routes calls to the disabled handler
 			if !tc.allowWriteOps {
-				for _, toolID := range []string{tools.CreateOrderToolID, tools.CancelOrderToolID} {
+				for _, toolID := range []string{tools.CreateOrderToolID, tools.CancelOrderToolID, tools.ConvertToolID} {
 					resp := callTool(t, srv, toolID)
 					require.Contains(t, resp, tools.ErrWriteOperationDisabled,
 						"%s: calling %s should return disabled error", tc.name, toolID)
