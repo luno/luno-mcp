@@ -332,10 +332,10 @@ func TestHandleGetBalances(t *testing.T) {
 				assert.NotEmpty(t, textContent)
 
 				// Verify JSON structure
-				var balances []map[string]any
-				err := json.Unmarshal([]byte(textContent), &balances)
+				var output GetBalancesOutput
+				err := json.Unmarshal([]byte(textContent), &output)
 				assert.NoError(t, err)
-				assert.Len(t, balances, 2, "Should have 2 balances")
+				assert.Len(t, output.Balances, 2, "Should have 2 balances")
 			}
 		})
 	}
