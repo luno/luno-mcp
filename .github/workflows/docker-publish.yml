@@ -2,6 +2,17 @@ name: Docker Publish
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'cmd/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/docker-publish.yml'
   push:
     branches:
       - main
@@ -13,6 +24,7 @@ on:
       - 'go.mod'
       - 'go.sum'
       - 'Dockerfile'
+      - '.dockerignore'
       - '.github/workflows/docker-publish.yml'
 
 jobs:
@@ -64,6 +76,27 @@ jobs:
             [ "${{ github.event_name }}" != "pull_request" ] && echo "type=registry,ref=ghcr.io/${{ github.repository }}/cache:buildcache,mode=max"
             echo "EOF"
           } >> $GITHUB_OUTPUT
+
+      # Smoke-test the stdio handshake before pushing - the multi-arch publish
+      # below would otherwise ship a container that times out under mcp-proxy.
+      - name: Build image for stdio smoke test
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: luno-mcp:smoke-test
+          cache-from: type=gha
+
+      - name: Stdio handshake smoke test
+        run: |
+          set -euo pipefail
+          req='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci-smoke","version":"0.0.1"}}}'
+          response=$(printf '%s\n' "$req" \
+            | timeout 20 docker run --rm -i luno-mcp:smoke-test 2>/dev/null \
+            | head -n 1)
+          echo "Response: $response"
+          echo "$response" | jq -e '.jsonrpc == "2.0" and .id == 1 and .result != null' > /dev/null
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
