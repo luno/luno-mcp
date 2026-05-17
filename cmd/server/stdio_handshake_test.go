@@ -95,7 +95,14 @@ func buildServerBinary(t *testing.T) string {
 	require.NoError(t, err)
 	repoRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
 
-	cmd := exec.Command("go", "build", "-o", binPath, "./cmd/server")
+	ctx := context.Background()
+	if deadline, ok := t.Deadline(); ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, deadline)
+		t.Cleanup(cancel)
+	}
+
+	cmd := exec.CommandContext(ctx, "go", "build", "-o", binPath, "./cmd/server")
 	cmd.Dir = repoRoot
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "go build failed: %s", string(out))
