@@ -79,4 +79,4 @@ jobs:
           event-type: new-release
           client-payload: '{"version": "${{ github.event.release.tag_name }}"}'
 
-      # Docker is published automatically by docker-publish.yml, which triggers on v* tag pushes.
+      # Docker is published automatically by docker-publish.yml, which triggers on release publish.

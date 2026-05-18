@@ -2,30 +2,8 @@ name: Docker Publish
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'cmd/**'
-      - 'internal/**'
-      - 'go.mod'
-      - 'go.sum'
-      - 'Dockerfile'
-      - '.dockerignore'
-      - '.github/workflows/docker-publish.yml'
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-    paths:
-      - 'cmd/**'
-      - 'internal/**'
-      - 'go.mod'
-      - 'go.sum'
-      - 'Dockerfile'
-      - '.dockerignore'
-      - '.github/workflows/docker-publish.yml'
+  release:
+    types: [published]
 
 jobs:
   build-and-publish:
@@ -46,7 +24,6 @@ jobs:
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Log in to the Container registry
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
@@ -60,22 +37,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Set up cache configuration
-        id: cache
-        run: |
-          {
-            echo "cache_from<<EOF"
-            echo "type=gha"
-            [ "${{ github.event_name }}" != "pull_request" ] && echo "type=registry,ref=ghcr.io/${{ github.repository }}/cache:buildcache"
-            echo "EOF"
-            echo "cache_to<<EOF"
-            echo "type=gha,mode=max"
-            [ "${{ github.event_name }}" != "pull_request" ] && echo "type=registry,ref=ghcr.io/${{ github.repository }}/cache:buildcache,mode=max"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
 
       # Smoke-test the stdio handshake before pushing - the multi-arch publish
       # below would otherwise ship a container that times out under mcp-proxy.
@@ -99,15 +61,20 @@ jobs:
           echo "$response" | jq -e '.jsonrpc == "2.0" and .id == 1 and .result != null' > /dev/null
 
       - name: Build and push Docker image
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: ${{ steps.cache.outputs.cache_from }}
-          cache-to: ${{ steps.cache.outputs.cache_to }}
+          cache-from: |
+            type=gha
+            type=registry,ref=ghcr.io/${{ github.repository }}/cache:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=ghcr.io/${{ github.repository }}/cache:buildcache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
           provenance: true
