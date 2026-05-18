@@ -61,6 +61,7 @@ jobs:
           echo "$response" | jq -e '.jsonrpc == "2.0" and .id == 1 and .result != null' > /dev/null
 
       - name: Build and push Docker image
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
