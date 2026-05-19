@@ -16,7 +16,7 @@ import (
 )
 
 // TestStdioHandshake guards the Glama / Claude Desktop / VS Code integration:
-// the container is launched with no args and must respond to a JSON-RPC
+// the binary is launched with no args and must respond to a JSON-RPC
 // initialize on stdio. A non-stdio default transport silently hangs the proxy
 // instead of failing the build.
 func TestStdioHandshake(t *testing.T) {
@@ -30,7 +30,7 @@ func TestStdioHandshake(t *testing.T) {
 	defer cancel()
 
 	var stderr bytes.Buffer
-	cmd := exec.CommandContext(ctx, binPath, "--transport="+testTransportStdio)
+	cmd := exec.CommandContext(ctx, binPath)
 	stdin, err := cmd.StdinPipe()
 	require.NoError(t, err)
 	stdout, err := cmd.StdoutPipe()

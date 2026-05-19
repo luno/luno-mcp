@@ -47,7 +47,7 @@ API credentials and runtime options:
 - `ALLOW_WRITE_OPERATIONS` - same effect as `--allow-write-operations` flag
 - `.env` and `../.env` are auto-loaded at startup via godotenv (dev convenience only; MCP clients pass credentials via their own input mechanism)
 
-CLI flags: `--transport` (stdio/sse/streamable-http, default `streamable-http`), `--sse-address` (default `localhost:8080`), `--domain`, `--log-level` (debug/info/warn/error), `--allow-write-operations`.
+CLI flags: `--transport` (stdio/sse/streamable-http, default `stdio`), `--sse-address` (default `localhost:8080`), `--domain`, `--log-level` (debug/info/warn/error), `--allow-write-operations`.
 
 ## Release
 

@@ -30,6 +30,3 @@ COPY --from=builder /luno-mcp /luno-mcp
 USER app
 
 ENTRYPOINT ["/luno-mcp"]
-# Container clients (Glama, Claude Desktop, VS Code) pipe JSON-RPC over stdio;
-# the binary CLI default is streamable-http which makes them hang.
-CMD ["--transport=stdio"]

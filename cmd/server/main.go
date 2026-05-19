@@ -58,7 +58,7 @@ func loadEnvFile() bool {
 
 // parseFlags parses command line flags and returns CliFlags struct
 func parseFlags() CliFlags {
-	transportType := flag.String("transport", "streamable-http", "Transport type (stdio, sse, or streamable-http)")
+	transportType := flag.String("transport", "stdio", "Transport type (stdio, sse, or streamable-http)")
 	sseAddr := flag.String("sse-address", "localhost:8080", "Address for SSE and Streamable HTTP transports")
 	lunoDomain := flag.String("domain", "", "Luno API domain (default: api.luno.com)")
 	logLevel := flag.String("log-level", "info", "Log level (debug, info, warn, error)")
