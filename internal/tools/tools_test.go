@@ -1836,3 +1836,39 @@ func TestHandleConvert(t *testing.T) {
 		})
 	}
 }
+
+// TestOutputSchemaDecimalAndTime locks in that schema overrides for the Luno
+// SDK's primitive-marshalled types (decimal.Decimal -> string,
+// luno.Time -> ["null","string"]) survive. Without these, strict clients
+// reject every order book entry, ticker, candle, etc.
+func TestOutputSchemaDecimalAndTime(t *testing.T) {
+	t.Parallel()
+
+	tool := NewGetOrderBookTool()
+	require := assert.New(t)
+	require.NotNil(tool.RawOutputSchema, "expected RawOutputSchema to be set via withOutputSchema")
+
+	var schema map[string]any
+	require.NoError(json.Unmarshal(tool.RawOutputSchema, &schema))
+
+	props, _ := schema["properties"].(map[string]any)
+	for _, side := range []string{"asks", "bids"} {
+		arr, _ := props[side].(map[string]any)
+		items, _ := arr["items"].(map[string]any)
+		entryProps, _ := items["properties"].(map[string]any)
+		for _, field := range []string{"price", "volume"} {
+			f, _ := entryProps[field].(map[string]any)
+			assert.Equal(t, "string", f["type"], "%s/%s should be string, not object", side, field)
+		}
+	}
+
+	// And a quick smoke test for luno.Time on a tool that uses it.
+	txTool := NewListTransactionsTool()
+	require.NotNil(txTool.RawOutputSchema)
+	var txSchema map[string]any
+	require.NoError(json.Unmarshal(txTool.RawOutputSchema, &txSchema))
+	// Just assert no nested struct shows up as a bare {type: "object"} where a
+	// timestamp is expected - if we regress, the JSON below will contain it.
+	rendered, _ := json.Marshal(txSchema)
+	assert.NotContains(t, string(rendered), `"timestamp":{"type":"object"`)
+}

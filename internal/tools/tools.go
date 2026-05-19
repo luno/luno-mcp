@@ -55,7 +55,7 @@ func readOnlyTool[T any](title string) mcp.ToolOption {
 			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithIdempotentHintAnnotation(true),
 			mcp.WithOpenWorldHintAnnotation(true),
-			mcp.WithOutputSchema[T](),
+			withOutputSchema[T](),
 		} {
 			opt(t)
 		}
@@ -356,7 +356,7 @@ func NewCreateOrderTool() mcp.Tool {
 		mcp.WithDestructiveHintAnnotation(false),
 		mcp.WithIdempotentHintAnnotation(false),
 		mcp.WithOpenWorldHintAnnotation(true),
-		mcp.WithOutputSchema[luno.PostLimitOrderResponse](),
+		withOutputSchema[luno.PostLimitOrderResponse](),
 		mcp.WithString(
 			"pair",
 			mcp.Required(),
@@ -492,7 +492,7 @@ func NewCancelOrderTool() mcp.Tool {
 		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithIdempotentHintAnnotation(true),
 		mcp.WithOpenWorldHintAnnotation(true),
-		mcp.WithOutputSchema[luno.StopOrderResponse](),
+		withOutputSchema[luno.StopOrderResponse](),
 		mcp.WithString(
 			"order_id",
 			mcp.Required(),
@@ -534,7 +534,7 @@ func NewConvertTool() mcp.Tool {
 		mcp.WithDestructiveHintAnnotation(false),
 		mcp.WithIdempotentHintAnnotation(false),
 		mcp.WithOpenWorldHintAnnotation(true),
-		mcp.WithOutputSchema[luno.ConvertResponse](),
+		withOutputSchema[luno.ConvertResponse](),
 		mcp.WithString(
 			"source_account_id",
 			mcp.Required(),
