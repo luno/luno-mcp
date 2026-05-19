@@ -449,7 +449,7 @@ Optional environment variables:
 
 ## Command-line options
 
-- `--transport`: Transport type (`stdio`, `sse`, or `streamable-http`; default: `streamable-http`)
+- `--transport`: Transport type (`stdio`, `sse`, or `streamable-http`; default: `stdio`)
 - `--sse-address`: Address for SSE and Streamable HTTP transports (default: `localhost:8080`)
 - `--domain`: Luno API domain (default: `api.luno.com`)
 - `--log-level`: Log level (`debug`, `info`, `warn`, `error`, default: `info`)

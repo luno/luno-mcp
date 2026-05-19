@@ -89,7 +89,7 @@ func TestParseFlags(t *testing.T) {
 			name: "default flags",
 			args: []string{},
 			expected: CliFlags{
-				TransportType:        testTransportStreamableHTTP,
+				TransportType:        testTransportStdio,
 				SSEAddr:              testDefaultSSEAddr,
 				LunoDomain:           "",
 				LogLevel:             testLogLevelInfo,
@@ -133,7 +133,7 @@ func TestParseFlags(t *testing.T) {
 			name: "allow write operations flag",
 			args: []string{"-allow-write-operations=true"},
 			expected: CliFlags{
-				TransportType:        testTransportStreamableHTTP,
+				TransportType:        testTransportStdio,
 				SSEAddr:              testDefaultSSEAddr,
 				LunoDomain:           "",
 				LogLevel:             testLogLevelInfo,
@@ -399,7 +399,7 @@ func TestMainFunctionFlow(t *testing.T) {
 		os.Args = []string{"cmd"}
 
 		flags := parseFlags()
-		assert.Equal(t, testTransportStreamableHTTP, flags.TransportType)
+		assert.Equal(t, testTransportStdio, flags.TransportType)
 		assert.Equal(t, testDefaultSSEAddr, flags.SSEAddr)
 		assert.Equal(t, "", flags.LunoDomain)
 		assert.Equal(t, testLogLevelInfo, flags.LogLevel)
