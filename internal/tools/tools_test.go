@@ -1844,31 +1844,81 @@ func TestHandleConvert(t *testing.T) {
 func TestOutputSchemaDecimalAndTime(t *testing.T) {
 	t.Parallel()
 
-	tool := NewGetOrderBookTool()
-	require := assert.New(t)
-	require.NotNil(tool.RawOutputSchema, "expected RawOutputSchema to be set via withOutputSchema")
-
-	var schema map[string]any
-	require.NoError(json.Unmarshal(tool.RawOutputSchema, &schema))
-
-	props, _ := schema["properties"].(map[string]any)
-	for _, side := range []string{"asks", "bids"} {
-		arr, _ := props[side].(map[string]any)
-		items, _ := arr["items"].(map[string]any)
-		entryProps, _ := items["properties"].(map[string]any)
-		for _, field := range []string{"price", "volume"} {
-			f, _ := entryProps[field].(map[string]any)
-			assert.Equal(t, "string", f["type"], "%s/%s should be string, not object", side, field)
-		}
+	tests := []struct {
+		name    string
+		factory func() mcp.Tool
+		check   func(t *testing.T, schema map[string]any)
+	}{
+		{
+			name:    "GetOrderBook price/volume are strings",
+			factory: NewGetOrderBookTool,
+			check: func(t *testing.T, schema map[string]any) {
+				props, _ := schema["properties"].(map[string]any)
+				for _, side := range []string{"asks", "bids"} {
+					arr, _ := props[side].(map[string]any)
+					items, _ := arr["items"].(map[string]any)
+					entryProps, _ := items["properties"].(map[string]any)
+					for _, field := range []string{"price", "volume"} {
+						f, _ := entryProps[field].(map[string]any)
+						assert.Equal(t, "string", f["type"], "%s/%s should be string, not object", side, field)
+					}
+				}
+			},
+		},
+		{
+			name:    "ListTransactions timestamp is null|string",
+			factory: NewListTransactionsTool,
+			check: func(t *testing.T, schema map[string]any) {
+				assertTimeFieldSchema(t, schema, "transactions", "timestamp")
+			},
+		},
 	}
 
-	// And a quick smoke test for luno.Time on a tool that uses it.
-	txTool := NewListTransactionsTool()
-	require.NotNil(txTool.RawOutputSchema)
-	var txSchema map[string]any
-	require.NoError(json.Unmarshal(txTool.RawOutputSchema, &txSchema))
-	// Just assert no nested struct shows up as a bare {type: "object"} where a
-	// timestamp is expected - if we regress, the JSON below will contain it.
-	rendered, _ := json.Marshal(txSchema)
-	assert.NotContains(t, string(rendered), `"timestamp":{"type":"object"`)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			tool := tt.factory()
+			assert.NotNil(t, tool.RawOutputSchema, "expected RawOutputSchema to be set via withOutputSchema")
+
+			var schema map[string]any
+			assert.NoError(t, json.Unmarshal(tool.RawOutputSchema, &schema))
+			tt.check(t, schema)
+		})
+	}
+}
+
+// assertTimeFieldSchema walks schema.properties[arrayProp].items.properties[field]
+// and verifies its "type" resolves to either "string" or ["null","string"].
+// This is stricter than a substring check: a regression that leaves type as
+// "object" with extra keys would still fail here.
+func assertTimeFieldSchema(t *testing.T, schema map[string]any, arrayProp, field string) {
+	t.Helper()
+	props, ok := schema["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("missing root properties")
+	}
+	arr, ok := props[arrayProp].(map[string]any)
+	if !ok {
+		t.Fatalf("missing %q property", arrayProp)
+	}
+	items, ok := arr["items"].(map[string]any)
+	if !ok {
+		t.Fatalf("%q has no items schema", arrayProp)
+	}
+	itemProps, ok := items["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("%q items has no properties", arrayProp)
+	}
+	target, ok := itemProps[field].(map[string]any)
+	if !ok {
+		t.Fatalf("missing %s.items.properties.%s", arrayProp, field)
+	}
+	switch v := target["type"].(type) {
+	case string:
+		assert.Equal(t, "string", v, "%s.%s should be string, not %q", arrayProp, field, v)
+	case []any:
+		assert.ElementsMatch(t, []any{"null", "string"}, v, "%s.%s should be [null,string]", arrayProp, field)
+	default:
+		t.Fatalf("%s.%s has unexpected type schema: %T (%v)", arrayProp, field, target["type"], target["type"])
+	}
 }
