@@ -531,7 +531,7 @@ func NewConvertTool() mcp.Tool {
 		mcp.WithDescription("Instantly convert funds between two currency accounts on the authenticated profile via the Luno broker (e.g. ZAR to ZARU). The conversion is final and applies the broker quote at execution time. Pass idempotency_key to make retries safe; omitting it generates a fresh UUID per call, so retries on network error may double-convert."+writeOperationNotice),
 		mcp.WithTitleAnnotation("Convert between currencies"),
 		mcp.WithReadOnlyHintAnnotation(false),
-		mcp.WithDestructiveHintAnnotation(false),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithIdempotentHintAnnotation(false),
 		mcp.WithOpenWorldHintAnnotation(true),
 		withOutputSchema[luno.ConvertResponse](),
